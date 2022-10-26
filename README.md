@@ -2,8 +2,6 @@
 [![CodeQL](https://github.com/jenkinsci/loadrunner-cloud-plugin/actions/workflows/codeql.yml/badge.svg)](https://github.com/jenkinsci/loadrunner-cloud-plugin/actions/workflows/codeql.yml)
 [![Jenkins Security Scan](https://github.com/jenkinsci/loadrunner-cloud-plugin/actions/workflows/jenkins-security-scan.yml/badge.svg)](https://github.com/jenkinsci/loadrunner-cloud-plugin/actions/workflows/jenkins-security-scan.yml)
 
-**NOTICE**: This is a **PRERELEASE** version  
-
 - [Introduction](#introduction)
 - [Getting Started](#getting-started)
   - [System Configuraiton](#system-configuration)
