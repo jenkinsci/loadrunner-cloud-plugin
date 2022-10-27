@@ -39,6 +39,8 @@
         <kotlin.compiler.incrementail>true</kotlin.compiler.incrementail>
         <configuration-as-code.version>1512.vb_79d418d5fc8</configuration-as-code.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.failOnError>false</spotbugs.failOnError>
+        <spotbugs.threshold>High</spotbugs.threshold>
     </properties>
 
     <dependencyManagement>
