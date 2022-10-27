@@ -21,7 +21,6 @@
             <url>https://opensource.org/licenses/MIT</url>
         </license>
     </licenses>
-
     <scm>
         <connection>scm:git:https://github.com/${gitHubRepo}</connection>
         <developerConnection>scm:git:https://github.com/${gitHubRepo}</developerConnection>
@@ -29,7 +28,7 @@
         <url>https://github.com/${gitHubRepo}</url>
     </scm>
     <properties>
-        <revision>4.9.1-</revision>
+        <revision>5.0.0-</revision>
         <changelist>-SNAPSHOT</changelist>
 
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
@@ -38,9 +37,6 @@
         <gitHubRepo>jenkinsci/loadrunner-cloud-plugin</gitHubRepo>
         <kotlin.version>1.7.20</kotlin.version>
         <kotlin.compiler.incrementail>true</kotlin.compiler.incrementail>
-        <spotbugs.effort>Max</spotbugs.effort>
-        <spotbugs.failOnError>false</spotbugs.failOnError>
-        <spotbugs.threshold>High</spotbugs.threshold>
         <configuration-as-code.version>1512.vb_79d418d5fc8</configuration-as-code.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
@@ -155,27 +151,6 @@
                     <execution>
                         <id>validate-checkstyle</id>
                         <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.2.1</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs</artifactId>
-                        <version>4.7.3</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>validate-spotbugs</id>
-                        <phase>none</phase>  <!-- disable it by default -->
                         <goals>
                             <goal>check</goal>
                         </goals>
