@@ -13,7 +13,6 @@
 package com.microfocus.lrc.core.entity
 
 import com.google.gson.JsonObject
-import java.io.InputStream
 import java.io.Serializable
 
 class LoadTestRun(

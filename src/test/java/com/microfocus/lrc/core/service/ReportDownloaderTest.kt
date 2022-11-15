@@ -60,17 +60,17 @@ class ReportDownloaderTest {
             "Peacefull_FF",
             -1,
             "TC_peacefull_12.56_FF_20_pacing",
-            0.44700024F,
-            0.59299994F,
-            0.50877136F,
-            0.58499986F,
-            0.0F,
+            0.44700024,
+            0.59299994,
+            0.50877136,
+            0.58499986,
+            0.0,
             "N/A",
-            3,
-            0.11051371F,
+            3.0,
+            0.11051371,
             90,
             0,
-            -0.013767751F
+            -0.013767751
         )
         val csvBytes = ReportDownloader.writeCsvBytesArray(arrayOf(tx))
         println(csvBytes.toString(Charsets.UTF_8))
