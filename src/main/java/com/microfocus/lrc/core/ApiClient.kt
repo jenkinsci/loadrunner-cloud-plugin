@@ -144,26 +144,30 @@ class ApiClient internal constructor(
         payload.addProperty("password", this.serverConfiguration.password)
 
         val res = this.post("v1/auth", payload = payload)
-        if (res.code != 200) {
-            throw IOException("login to ${this.serverConfiguration.url} failed: ${res.code}, ${res.body?.string()}")
-        }
+        res.use {
+            if (res.code != 200) {
+                throw IOException("login to ${this.serverConfiguration.url} failed: ${res.code}, ${res.body?.string()}")
+            }
 
-        val resObj = Utils.parseJsonString(res.body?.string(), "Failed to parse authentication response data")
-        if (resObj.has("token")) {
-            this.csrfCookieStr = resObj["token"].asString
-        } else {
-            throw IOException("login to ${this.serverConfiguration.url} failed, invalid response ${res.body?.string()}")
+            val resObj = Utils.parseJsonString(res.body?.string(), "Failed to parse authentication response data")
+            if (resObj.has("token")) {
+                this.csrfCookieStr = resObj["token"].asString
+            } else {
+                throw IOException("login to ${this.serverConfiguration.url} failed, invalid response ${res.body?.string()}")
+            }
         }
     }
 
     fun validateTenant() {
         val res = this.get("v1/projects")
-        if (res.code != 200) {
-            throw IOException("Failed to retrieve projects from tenant: ${res.code}, ${res.body?.string()}")
-        }
+        res.use {
+            if (res.code != 200) {
+                throw IOException("Failed to retrieve projects from tenant: ${res.code}, ${res.body?.string()}")
+            }
 
-        if (!Utils.isValidJsonArray(res.body?.string())) {
-            throw IOException("Failed to retrieve projects from tenant")
+            if (!Utils.isValidJsonArray(res.body?.string())) {
+                throw IOException("Failed to retrieve projects from tenant")
+            }
         }
     }
 
@@ -177,6 +181,7 @@ class ApiClient internal constructor(
         val res = this.get(apiPath)
         if (res.code != 200) {
             this.loggerProxy.info("Report #$reportId is not ready: ${res.code}, ${res.body?.string()}")
+            res.close()
             return null
         }
 
@@ -185,6 +190,7 @@ class ApiClient internal constructor(
             return res.body?.byteStream()
         } else {
             this.loggerProxy.info("Unknown content type: $contentType")
+            res.close()
             return null
         }
     }
@@ -195,15 +201,17 @@ class ApiClient internal constructor(
         payload.addProperty("client_secret", this.serverConfiguration.password)
 
         val res = this.post("v1/auth-client", payload = payload)
-        if (res.code != 200) {
-            throw IOException("login to ${this.serverConfiguration.url} failed: ${res.code}, ${res.body?.string()}, ${res.message}")
-        }
-        val body = res.body?.string()
-        val resObj = Utils.parseJsonString(body, "Failed to parse authentication response data")
-        if (resObj.has("token")) {
-            this.tokenAuth = resObj["token"].asString
-        } else {
-            throw IOException("login to ${this.serverConfiguration.url} failed, invalid response ${res.body?.string()}")
+        res.use {
+            if (res.code != 200) {
+                throw IOException("login to ${this.serverConfiguration.url} failed: ${res.code}, ${res.body?.string()}, ${res.message}")
+            }
+            val body = res.body?.string()
+            val resObj = Utils.parseJsonString(body, "Failed to parse authentication response data")
+            if (resObj.has("token")) {
+                this.tokenAuth = resObj["token"].asString
+            } else {
+                throw IOException("login to ${this.serverConfiguration.url} failed, invalid response ${res.body?.string()}")
+            }
         }
     }
 

@@ -31,22 +31,24 @@ class LoadTestRunService(
             mapOf("runId" to runId)
         ).path
         val response = client.get(apiPath)
-        if (response.isSuccessful) {
-            val json = response.body?.string() ?: return null
-            val jsonObj = Utils.parseJsonString(json, "Failed to parse test run data for #${runId}")
-            val lt = LoadTest(client.getServerConfiguration().projectId, jsonObj.get("testId").asInt)
-            val testRun = LoadTestRun(
-                runId.toInt(),
-                lt
-            )
+        response.use {
+            if (response.isSuccessful) {
+                val json = response.body?.string() ?: return null
+                val jsonObj = Utils.parseJsonString(json, "Failed to parse test run data for #${runId}")
+                val lt = LoadTest(client.getServerConfiguration().projectId, jsonObj.get("testId").asInt)
+                val testRun = LoadTestRun(
+                    runId.toInt(),
+                    lt
+                )
 
-            testRun.update(jsonObj)
+                testRun.update(jsonObj)
 
-            return testRun
-        } else {
-            loggerProxy.error("Failed to fetch run $runId. HTTP status code: ${response.code}, " +
-                    "body: ${response.body?.string()?.take(512)}")
-            return null
+                return testRun
+            } else {
+                loggerProxy.error("Failed to fetch run $runId. HTTP status code: ${response.code}, " +
+                        "body: ${response.body?.string()?.take(512)}")
+                return null
+            }
         }
     }
 
@@ -55,24 +57,26 @@ class LoadTestRunService(
             mapOf("runId" to testRun.id.toString())
         ).path
         val response = client.get(apiPath)
-        if (response.isSuccessful) {
-            val json = response.body?.string()
-            val jsonObj: JsonObject
-            try {
-                jsonObj = Gson().fromJson(json, JsonObject::class.java)
-            } catch (ex: Exception) {
-                this.loggerProxy.error("Failed to parse run status")
-                this.loggerProxy.debug("Got run status response: $json")
-                throw IOException("Unauthorized")
-            }
-            testRun.update(jsonObj)
-        } else {
-            if (response.code == 401) {
-                throw IOException("Unauthorized")
-            }
+        response.use {
+            if (response.isSuccessful) {
+                val json = response.body?.string()
+                val jsonObj: JsonObject
+                try {
+                    jsonObj = Gson().fromJson(json, JsonObject::class.java)
+                } catch (ex: Exception) {
+                    this.loggerProxy.error("Failed to parse run status")
+                    this.loggerProxy.debug("Got run status response: $json")
+                    throw IOException("Unauthorized")
+                }
+                testRun.update(jsonObj)
+            } else {
+                if (response.code == 401) {
+                    throw IOException("Unauthorized")
+                }
 
-            throw IOException("Failed to fetch run ${testRun.id}. HTTP status code: ${response.code}, " +
-                    "body: ${response.body?.string()?.take(512)}")
+                throw IOException("Failed to fetch run ${testRun.id}. HTTP status code: ${response.code}, " +
+                        "body: ${response.body?.string()?.take(512)}")
+            }
         }
     }
 
@@ -85,18 +89,20 @@ class LoadTestRunService(
             )
         ).path
         val res = this.client.get(apiPath)
-        val code = res.code
-        if (code != 200) {
-            if (code == 401) {
-                throw IOException("Unauthorized")
-            }
+        res.use {
+            val code = res.code
+            if (code != 200) {
+                if (code == 401) {
+                    throw IOException("Unauthorized")
+                }
 
-            throw IOException("Failed to fetch status for run ${testRun.id}: $code")
+                throw IOException("Failed to fetch status for run ${testRun.id}: $code")
+            }
+            val body = res.body?.string()
+            this.loggerProxy.debug("Fetching test run status got $code, $body")
+            val obj = Utils.parseJsonString(body, "Failed to parse test run status data for #${testRun.id}")
+            testRun.update(obj)
         }
-        val body = res.body?.string()
-        this.loggerProxy.debug("Fetching test run status got $code, $body")
-        val obj = Utils.parseJsonString(body, "Failed to parse test run status data for #${testRun.id}")
-        testRun.update(obj)
     }
 
     fun abort(testRun: LoadTestRun) {
@@ -107,14 +113,16 @@ class LoadTestRunService(
         ).path
 
         val res = this.client.put(apiPath, mapOf("action" to "STOP"), JsonObject())
-        val code = res.code
-        val body = res.body?.string()
-        this.loggerProxy.debug("Aborting test run got $code, $body")
-        if (code != 200) {
-            this.loggerProxy.info("Aborting test run failed: $code, $body")
-            throw IOException("Aborting test run [${testRun.id}] failed")
-        }
+        res.use {
+            val code = res.code
+            val body = res.body?.string()
+            this.loggerProxy.debug("Aborting test run got $code, $body")
+            if (code != 200) {
+                this.loggerProxy.info("Aborting test run failed: $code, $body")
+                throw IOException("Aborting test run [${testRun.id}] failed")
+            }
 
-        this.loggerProxy.info("Aborting test run successfully.")
+            this.loggerProxy.info("Aborting test run successfully.")
+        }
     }
 }
