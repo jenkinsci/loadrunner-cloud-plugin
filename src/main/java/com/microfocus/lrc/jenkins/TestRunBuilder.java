@@ -676,6 +676,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 InputStream reportStream = apiClient.getReport(finalTestRun.getReports().get(fileName));
                 if (reportStream != null) {
                     file.copyFrom(reportStream);
+                    reportStream.close();
                     this.loggerProxy.info("Report file " + file.getRemote() + " created.");
                 } else {
                     this.loggerProxy.info("Report data for " + file.getRemote() + " is not available.");

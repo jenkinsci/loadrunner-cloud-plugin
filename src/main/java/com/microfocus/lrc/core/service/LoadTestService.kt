@@ -34,18 +34,20 @@ class LoadTestService(
             )
         ).path
         val res = this.client.get(apiPath)
-        val code = res.code
-        val bodyString = res.body?.string()
-        this.loggerProxy.debug("Fetching load test got response: $code, $bodyString")
+        res.use {
+            val code = res.code
+            val bodyString = res.body?.string()
+            this.loggerProxy.debug("Fetching load test got response: $code, $bodyString")
 
-        if (res.code == 200) {
-            val resObj = Utils.parseJsonString(bodyString, "Failed to parse load test data for #$id")
-            val lt = LoadTest(id, this.client.getServerConfiguration().projectId)
-            lt.name = resObj.get("name").asString
+            if (res.code == 200) {
+                val resObj = Utils.parseJsonString(bodyString, "Failed to parse load test data for #$id")
+                val lt = LoadTest(id, this.client.getServerConfiguration().projectId)
+                lt.name = resObj.get("name").asString
 
-            return lt
-        } else {
-            throw IOException("Failed to fetch load test #$id. $code, $bodyString")
+                return lt
+            } else {
+                throw IOException("Failed to fetch load test #$id. $code, $bodyString")
+            }
         }
     }
 
@@ -62,12 +64,14 @@ class LoadTestService(
             "initiator" to Constants.INITIATOR
         )
         val res = this.client.post(apiPath, queryParams, payload)
-        val bodyString = res.body?.string()
-        if (res.code == 200) {
-            val resObj = Utils.parseJsonString(bodyString, "Failed to parse test run data")
-            return resObj.get("runId").asInt
-        } else {
-            throw IOException("Failed to start test run, load test #$id. error: $bodyString")
+        res.use {
+            val bodyString = res.body?.string()
+            if (res.code == 200) {
+                val resObj = Utils.parseJsonString(bodyString, "Failed to parse test run data")
+                return resObj.get("runId").asInt
+            } else {
+                throw IOException("Failed to start test run, load test #$id. error: $bodyString")
+            }
         }
     }
 }
