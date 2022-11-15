@@ -52,8 +52,7 @@ class ApiClient internal constructor(
             .newBuilder()
             .addPathSegments(apiPath)
 
-        if (!this.serverConfiguration.tenantId.equals("")) {
-            urlBuilder.addQueryParameter("projectId", this.serverConfiguration.projectId.toString())
+        if (!this.serverConfiguration.tenantId.isNullOrEmpty()) {
             urlBuilder.addQueryParameter("TENANTID", this.serverConfiguration.tenantId)
         }
 
