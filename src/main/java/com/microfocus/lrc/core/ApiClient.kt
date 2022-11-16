@@ -84,9 +84,9 @@ class ApiClient internal constructor(
         try {
             return this.getOkhttpClient().newCall(reqBuilder.build()).execute()
         } catch (ex: UnknownHostException) {
-            throw IOException("Cannot resolve hostname: ${ex.message}, please check your configuration")
+            throw IOException("Unable to resolve hostname: ${ex.message}. Check your configuration")
         } catch (ex: SSLHandshakeException) {
-            throw IOException("Cannot access server, please check if you are behind a proxy server")
+            throw IOException("Unable to connect server. Check if you are behind a proxy or firewall")
         }
     }
 
@@ -134,6 +134,26 @@ class ApiClient internal constructor(
         return this.execute(reqBuilder)
     }
 
+    private fun loginOAuth() {
+        val payload = JsonObject()
+        payload.addProperty("client_id", this.serverConfiguration.username)
+        payload.addProperty("client_secret", this.serverConfiguration.password)
+
+        val res = this.post("v1/auth-client", payload = payload)
+        res.use {
+            if (res.code != 200) {
+                throw IOException("Failed to login ${this.serverConfiguration.url}. Status code: ${res.code}, details: ${res.body?.string()}")
+            }
+            val body = res.body?.string()
+            val resObj = Utils.parseJsonString(body, "Failed to parse authentication response data")
+            if (resObj.has("token")) {
+                this.tokenAuth = resObj["token"].asString
+            } else {
+                throw IOException("Failed to login ${this.serverConfiguration.url}. Invalid response: ${res.body?.string()}")
+            }
+        }
+    }
+
     fun login() {
         if (isOAuthClientId(this.serverConfiguration.username)) {
             return this.loginOAuth()
@@ -146,14 +166,14 @@ class ApiClient internal constructor(
         val res = this.post("v1/auth", payload = payload)
         res.use {
             if (res.code != 200) {
-                throw IOException("login to ${this.serverConfiguration.url} failed: ${res.code}, ${res.body?.string()}")
+                throw IOException("Failed to login ${this.serverConfiguration.url}. Status code: ${res.code}, details: ${res.body?.string()}")
             }
 
             val resObj = Utils.parseJsonString(res.body?.string(), "Failed to parse authentication response data")
             if (resObj.has("token")) {
                 this.csrfCookieStr = resObj["token"].asString
             } else {
-                throw IOException("login to ${this.serverConfiguration.url} failed, invalid response ${res.body?.string()}")
+                throw IOException("Failed to login ${this.serverConfiguration.url}. Invalid response: ${res.body?.string()}")
             }
         }
     }
@@ -195,26 +215,6 @@ class ApiClient internal constructor(
         }
     }
 
-    private fun loginOAuth() {
-        val payload = JsonObject()
-        payload.addProperty("client_id", this.serverConfiguration.username)
-        payload.addProperty("client_secret", this.serverConfiguration.password)
-
-        val res = this.post("v1/auth-client", payload = payload)
-        res.use {
-            if (res.code != 200) {
-                throw IOException("login to ${this.serverConfiguration.url} failed: ${res.code}, ${res.body?.string()}, ${res.message}")
-            }
-            val body = res.body?.string()
-            val resObj = Utils.parseJsonString(body, "Failed to parse authentication response data")
-            if (resObj.has("token")) {
-                this.tokenAuth = resObj["token"].asString
-            } else {
-                throw IOException("login to ${this.serverConfiguration.url} failed, invalid response ${res.body?.string()}")
-            }
-        }
-    }
-
     fun getServerConfiguration(): ServerConfiguration {
         return this.serverConfiguration
     }
@@ -249,8 +249,7 @@ class ApiClient internal constructor(
     }
 
     private fun parseURL(urlStr: String): HttpUrl {
-        val urlObj = urlStr.toHttpUrlOrNull() ?: throw Exception("invalid url $urlStr")
-        return urlObj
+        return urlStr.toHttpUrlOrNull() ?: throw Exception("Invalid URL: $urlStr")
     }
 
     override fun close() {
