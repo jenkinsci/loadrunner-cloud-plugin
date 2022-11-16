@@ -27,10 +27,6 @@ class JsonObj {
         this.jsonObject = jsonObject
     }
 
-    fun getJsonObject(): JsonObject {
-        return this.jsonObject
-    }
-
     fun optInt(key: String, default: Int): Int {
         val value = this.jsonObject.get(key)
         val result = try {
