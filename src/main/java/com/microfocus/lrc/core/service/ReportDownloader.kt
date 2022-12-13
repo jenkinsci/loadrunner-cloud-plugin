@@ -64,9 +64,9 @@ class ReportDownloader(
             val reportId = this.requestReportId(testRun.id, reportType)
             // wait for the report to be ready
             var retryWaitingTimes = 0
-            var maxRetry = 6
+            var maxRetry = Constants.REPORT_READY_MAX_RETRY
             if (reportType == "pdf") {
-                maxRetry = 24  // max 8 minutes for pdf report generation
+                maxRetry = Constants.PDF_REPORT_READY_MAX_RETRY
             }
 
             val pollingInterval = if (testRunOptions.isTestMode) 100 else Constants.REPORT_DOWNLOAD_POLLING_INTERVAL
