@@ -120,6 +120,7 @@ public class TestRunBuilderTest {
         MockResponse responseRunStatusHasReport = new MockResponse().setBody(runStatusResObj.toString());
         mockserver.enqueue(responseRunStatusHasReport);
 
+        MockServerResponseGenerator.mockTransactions();
         // repeat 2 times for csv and pdf
         for (int i = 0; i < 2; i += 1) {
             JsonObject genReportResObj = new JsonObject();
@@ -138,8 +139,6 @@ public class TestRunBuilderTest {
             responseReportContent.setHeader("Content-Type", "application/octet-stream");
             mockserver.enqueue(responseReportContent);
         }
-
-        MockServerResponseGenerator.mockTransactions();
 
         // for report downloading in TestRunBuilder.perform
         MockServerResponseGenerator.mockLogin();
@@ -185,6 +184,7 @@ public class TestRunBuilderTest {
         MockResponse responseRunStatusHasReport = new MockResponse().setBody(runStatusResObj.toString());
         mockserver.enqueue(responseRunStatusHasReport);
 
+        MockServerResponseGenerator.mockTransactions();
         // repeat 2 times for csv and pdf
         for (int i = 0; i < 2; i += 1) {
             JsonObject genReportResObj = new JsonObject();
@@ -203,8 +203,6 @@ public class TestRunBuilderTest {
             responseReportContent.setHeader("Content-Type", "application/octet-stream");
             mockserver.enqueue(responseReportContent);
         }
-
-        MockServerResponseGenerator.mockTransactions();
 
         // for report downloading in TestRunBuilder.perform
         MockServerResponseGenerator.mockLogin();
@@ -252,6 +250,7 @@ public class TestRunBuilderTest {
         MockResponse responseRunStatusHasReport = new MockResponse().setBody(runStatusResObj.toString());
         mockserver.enqueue(responseRunStatusHasReport);
 
+        MockServerResponseGenerator.mockTransactions();
         // repeat 2 times for csv and pdf
         for (int i = 0; i < 2; i += 1) {
             JsonObject genReportResObj = new JsonObject();
@@ -270,8 +269,6 @@ public class TestRunBuilderTest {
             responseReportContent.setHeader("Content-Type", "application/octet-stream");
             mockserver.enqueue(responseReportContent);
         }
-
-        MockServerResponseGenerator.mockTransactions();
 
         // for report downloading in TestRunBuilder.perform
         MockServerResponseGenerator.mockLogin();

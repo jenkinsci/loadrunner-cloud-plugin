@@ -59,7 +59,7 @@ class ReportDownloader(
         }
 
         // request reports generating
-        filteredReportTypes.map { reportType ->
+        filteredReportTypes.forEach { reportType ->
             this.loggerProxy.info("Requesting $reportType report ...")
             val reportId = this.requestReportId(testRun.id, reportType)
             // wait for the report to be ready
@@ -84,9 +84,6 @@ class ReportDownloader(
             val fileName = genFileName(reportType, testRun)
             testRun.reports[fileName] = reportId
         }
-
-        genXmlFile(testRun)
-        genTxCsv(testRun)
     }
 
     private fun requestReportId(runId: Int, reportType: String): Int {
@@ -189,7 +186,7 @@ class ReportDownloader(
             }
 
             val body = res.body?.string()
-            this.loggerProxy.debug("Fetched test run results: $body")
+            // this.loggerProxy.debug("Fetched test run results: $body")
             try {
                 return Gson().fromJson(body, TestRunResultsResponse::class.java)
             } catch (e: JsonSyntaxException) {
@@ -225,7 +222,7 @@ class ReportDownloader(
         }
     }
 
-    private fun genTxCsv(testRun: LoadTestRun) {
+    fun genTxCsv(testRun: LoadTestRun) {
         val txArr = fetchTestRunTx(testRun.id)
         val fileName = "lrc_report_trans_${this.apiClient.getServerConfiguration().tenantId}-${testRun.id}.csv"
         testRun.reportsByteArray[fileName] = writeCsvBytesArray(txArr)
