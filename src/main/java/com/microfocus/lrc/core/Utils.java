@@ -17,11 +17,20 @@ import com.google.gson.JsonObject;
 import com.microfocus.lrc.jenkins.LoggerProxy;
 import net.sf.json.JSONArray;
 import org.apache.commons.lang.StringUtils;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 
 public final class Utils {
     public static boolean isPositiveInteger(final String str) {
@@ -89,6 +98,23 @@ public final class Utils {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public static Document newXmlDocument() throws ParserConfigurationException {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
+        return documentBuilderFactory.newDocumentBuilder().newDocument();
+    }
+
+    public static Transformer newXmlTransformer() throws TransformerFactoryConfigurationError,
+            TransformerConfigurationException, NullPointerException {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+
+        return transformerFactory.newTransformer();
     }
 
     private Utils() {

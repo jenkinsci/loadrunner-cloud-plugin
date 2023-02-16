@@ -18,7 +18,7 @@ import kotlin.math.abs
 
 class TestRunTransactionsResponseTest {
     fun DoubleEqual(a: Double, b: Double) : Boolean {
-        return abs(a - b) < 0.000001;
+        return abs(a - b) < 0.000001
     }
 
     @Test
@@ -39,9 +39,9 @@ class TestRunTransactionsResponseTest {
                 "    \"maxTRT\": 51.61132001876831,\n" +
                 "    \"percentileTRT\": 5.472877685611247,\n" +
                 "    \"stdDeviation\": 3.2573858691456974\n" +
-                "  }";
-        val ret = Gson().fromJson(body, TestRunTransactionsResponse::class.java);
-        assert(DoubleEqual(ret.slaThreshold, 10.0));
+                "  }"
+        val ret = Gson().fromJson(body, TestRunTransactionsResponse::class.java)
+        assert(DoubleEqual(ret.slaThreshold, 10.0))
     }
 
     @Test
@@ -128,10 +128,10 @@ class TestRunTransactionsResponseTest {
                 "    \"percentileTRT\": 0,\n" +
                 "    \"stdDeviation\": 0\n" +
                 "  }\n" +
-                "]";
+                "]"
         val ret = Gson().fromJson(body, Array<TestRunTransactionsResponse>::class.java)
-        assert(ret.size == 5);
-        assert(DoubleEqual(ret[0].slaThreshold, 10.0));
-        assert(DoubleEqual(ret[4].slaThreshold, 0.0));
+        assert(ret.size == 5)
+        assert(DoubleEqual(ret[0].slaThreshold, 10.0))
+        assert(DoubleEqual(ret[4].slaThreshold, 0.0))
     }
 }
