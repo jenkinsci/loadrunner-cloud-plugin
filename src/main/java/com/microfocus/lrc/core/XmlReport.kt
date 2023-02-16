@@ -18,9 +18,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
@@ -32,9 +30,7 @@ class XmlReport {
             reportUrl: String,
             dashboardUrl: String,
         ): ByteArray {
-
-            val xml =
-                DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+            val xml = Utils.newXmlDocument()
             val isFailure: Boolean = TestRunStatus.PASSED.statusName != testRun.detailedStatus
 
             val testsuite = xml.createElement("testsuite")
@@ -109,13 +105,13 @@ class XmlReport {
                 testcase.appendChild(failureEle)
             }
 
-            val source = DOMSource(xml)
+            val trans2Str = Utils.newXmlTransformer()
 
-            val trans2Str = TransformerFactory.newInstance().newTransformer()
             trans2Str.setOutputProperty(OutputKeys.ENCODING, "UTF-8")
             trans2Str.setOutputProperty(OutputKeys.INDENT, "yes")
 
             val sw = StringWriter()
+            val source = DOMSource(xml)
             trans2Str.transform(source, StreamResult(sw))
 
             return sw.buffer.toString().toByteArray(StandardCharsets.UTF_8)
