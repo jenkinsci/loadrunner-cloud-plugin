@@ -74,7 +74,7 @@ class TestRunPublisherTest {
 
     @Test
     fun testPerform() {
-        EnvVars.masterEnvVars[OptionInEnvVars.LRC_DEBUG_LOG.name] = "true"
+        EnvVars.masterEnvVars[BooleanOptionInEnvVars.LRC_DEBUG_LOG.name] = "true"
 
         val project = jenkins.createFreeStyleProject()
         val publisher = TestRunPublisher(

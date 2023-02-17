@@ -43,6 +43,7 @@ import org.kohsuke.stapler.verb.POST;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Map;
 
 public final class TestRunPublisher extends Recorder implements SimpleBuildStep {
 
@@ -92,7 +93,6 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
         private PrintStream logger() {
             return this.listener.getLogger();
         }
-
 
         PublishReportCallable(
                 final ServerConfiguration serverConfiguration,
@@ -206,6 +206,11 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
         );
         serverConfiguration.setProxyConfiguration(proxyConfig);
 
+        Map<String, String> overrides = TestRunBuilder.readStringConfigFromEnvVars(build, launcher);
+        if (!overrides.isEmpty()) {
+            serverConfiguration.overrideConfig(overrides);
+        }
+
         String uiStatus = testRun.getDetailedStatus();
 
         TrendingConfiguration trendingCfg = this.getTrendingConfig();
@@ -276,24 +281,20 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
             final LoadTestRun testRun,
             final TestRunBuilder.DescriptorImpl descriptor
     ) {
-        ServerConfiguration serverConfiguration;
-        String usr = descriptor.getUsername();
-        String pwd = (descriptor.getPassword() != null) ? descriptor.getPassword().getPlainText() : "";
-        if (Boolean.TRUE.equals(descriptor.getUseOAuth())) {
-            usr = descriptor.getClientId();
-            pwd = (descriptor.getClientSecret() != null) ? descriptor.getClientSecret().getPlainText() : "";
-        }
+        String usr = descriptor.getUser();
+        String pwd = descriptor.getPswd();
+        String url = descriptor.getUrl();
+        String tenantId = descriptor.getTenantId();
+        int projId = testRun.getLoadTest().getProjectId();
 
-        serverConfiguration = new ServerConfiguration(
-                descriptor.getUrl(),
+        return new ServerConfiguration(
+                url,
                 usr,
                 pwd,
-                descriptor.getTenantId(),
-                testRun.getLoadTest().getProjectId(),
+                tenantId,
+                projId,
                 opt.getSendEmail()
         );
-
-        return serverConfiguration;
     }
 
     static final int RUN_COUNT_MIN = 5;

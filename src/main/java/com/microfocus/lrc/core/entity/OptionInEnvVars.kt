@@ -12,8 +12,15 @@
 
 package com.microfocus.lrc.core.entity
 
-enum class OptionInEnvVars {
+enum class BooleanOptionInEnvVars {
     LRC_SKIP_PDF_REPORT,
     LRC_DEBUG_LOG,
     LRC_TEST_MODE
+}
+
+enum class StringOptionInEnvVars {
+    LRC_URL,
+    LRC_TENANT_ID,
+    LRC_USERNAME,
+    LRC_PASSWORD
 }
