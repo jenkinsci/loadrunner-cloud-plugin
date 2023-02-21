@@ -88,6 +88,22 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
             load();
         }
 
+        public String getUser() {
+            if (Boolean.TRUE.equals(this.useOAuth)) {
+                return this.clientId;
+            } else {
+                return this.username;
+            }
+        }
+
+        public String getPswd() {
+            if (Boolean.TRUE.equals(this.useOAuth)) {
+                return (this.clientSecret != null) ? this.clientSecret.getPlainText() : "";
+            } else {
+                return (this.password != null) ? this.password.getPlainText() : "";
+            }
+        }
+
         @Override
         public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
             return true;
@@ -621,6 +637,13 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         }
 
         ServerConfiguration serverConfiguration = createServerConfiguration(descriptor, run, launcher);
+        Map<String, String> overrides = readStringConfigFromEnvVars(run, launcher);
+        if (!overrides.isEmpty()) {
+            serverConfiguration.overrideConfig(overrides);
+        }
+
+        printJobParameters(serverConfiguration);
+
         ProxyConfiguration proxyConfiguration = ConfigurationFactory.createProxyConfiguration(
                 serverConfiguration.getUrl(),
                 descriptor.useProxy,
@@ -633,13 +656,13 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         serverConfiguration.setProxyConfiguration(proxyConfiguration);
 
         int testIdVal = Integer.parseInt(this.getTestIdAtRunTime(run, launcher));
-        Map<String, String> envVarsObj = this.readConfigFromEnvVars(run, launcher);
+        Map<String, String> envVarsObj = this.readBoolConfigFromEnvVars(run, launcher);
         TestRunOptions opt = new TestRunOptions(
                 testIdVal,
                 this.sendEmail,
-                Boolean.parseBoolean(envVarsObj.get(OptionInEnvVars.LRC_SKIP_PDF_REPORT.name())),
-                Boolean.parseBoolean(envVarsObj.get(OptionInEnvVars.LRC_DEBUG_LOG.name())),
-                Boolean.parseBoolean(envVarsObj.get(OptionInEnvVars.LRC_TEST_MODE.name()))
+                Boolean.parseBoolean(envVarsObj.get(BooleanOptionInEnvVars.LRC_SKIP_PDF_REPORT.name())),
+                Boolean.parseBoolean(envVarsObj.get(BooleanOptionInEnvVars.LRC_DEBUG_LOG.name())),
+                Boolean.parseBoolean(envVarsObj.get(BooleanOptionInEnvVars.LRC_TEST_MODE.name()))
         );
 
         RunTestCallable callable = new RunTestCallable(
@@ -723,14 +746,25 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
-    private Map<String, String> readConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
+    private Map<String, String> readBoolConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
         Map<String, String> map = new HashMap<>();
-        for (OptionInEnvVars key : OptionInEnvVars.values()) {
+        for (BooleanOptionInEnvVars key : BooleanOptionInEnvVars.values()) {
             String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
             if (StringUtils.isNotBlank(value) && !value.equals("0")
                     && !value.equalsIgnoreCase("false") && !value.equalsIgnoreCase("no")) {
                 this.loggerProxy.info("Read " + key.name() + " from parameters / env variables: " + value);
                 map.put(key.name(), "true");
+            }
+        }
+        return map;
+    }
+
+    static Map<String, String> readStringConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
+        Map<String, String> map = new HashMap<>();
+        for (StringOptionInEnvVars key : StringOptionInEnvVars.values()) {
+            String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
+            if (StringUtils.isNotBlank(value)) {
+                map.put(key.name(), value.trim());
             }
         }
         return map;
@@ -793,22 +827,20 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
             final DescriptorImpl descriptor,
             final Run<?, ?> run,
             final Launcher launcher) {
-        String usr = descriptor.getUsername();
-        String pwd = (descriptor.getPassword() != null) ? descriptor.getPassword() .getPlainText() : "";
-        if (Boolean.TRUE.equals(descriptor.getUseOAuth())) {
-            usr = descriptor.getClientId();
-            pwd = (descriptor.getClientSecret() != null) ? descriptor.getClientSecret().getPlainText() : "";
-        }
-        ServerConfiguration config = new ServerConfiguration(
-                descriptor.getUrl(),
+        String usr = descriptor.getUser();
+        String pwd = descriptor.getPswd();
+        String url = descriptor.getUrl();
+        String tenantId = descriptor.getTenantId();
+        int projId = Integer.parseInt(this.getProjectIdAtRunTime(run, launcher));
+
+        return new ServerConfiguration(
+                url,
                 usr,
                 pwd,
-                descriptor.getTenantId(),
-                Integer.parseInt(this.getProjectIdAtRunTime(run, launcher)),
+                tenantId,
+                projId,
                 this.sendEmail
         );
-        printJobParameters(config);
-        return config;
     }
 
     @SuppressWarnings("java:S2065")

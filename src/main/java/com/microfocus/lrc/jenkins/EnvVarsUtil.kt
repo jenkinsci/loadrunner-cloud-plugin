@@ -17,6 +17,7 @@ import hudson.Launcher
 import hudson.model.ParameterValue
 import hudson.model.BooleanParameterValue
 import hudson.model.ParametersAction
+import hudson.model.PasswordParameterValue
 import hudson.model.Run
 import hudson.model.StringParameterValue
 import java.util.logging.Level
@@ -34,10 +35,11 @@ class EnvVarsUtil {
                     val param = action.getParameter(/* name = */ key)
                     if (param != null) {
                         var paramValue = ""
-                        if (param is StringParameterValue) {
-                            paramValue = param.getValue().toString()
-                        } else if (param is BooleanParameterValue) {
-                            paramValue = param.getValue().toString()
+                        if ((param is StringParameterValue) ||
+                            (param is BooleanParameterValue)) {
+                            paramValue = param.value.toString()
+                        } else if (param is PasswordParameterValue) {
+                            paramValue = param.value.plainText
                         }
 
                         return paramValue

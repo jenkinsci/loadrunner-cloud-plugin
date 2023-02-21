@@ -15,12 +15,13 @@ package com.microfocus.lrc.core.entity;
 import hudson.util.Secret;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public final class ServerConfiguration implements Serializable {
-    private final String url;
-    private final String username;
-    private final Secret password;
-    private final String tenantId;
+    private String url;
+    private String username;
+    private Secret password;
+    private String tenantId;
     private final int projectId;
     private ProxyConfiguration proxyConfiguration;
     private final boolean sendEmail;
@@ -78,4 +79,18 @@ public final class ServerConfiguration implements Serializable {
         this.proxyConfiguration = proxyConfiguration;
     }
 
+    public void overrideConfig(final Map<String, String> conf) {
+        if (conf.containsKey(StringOptionInEnvVars.LRC_URL.name())) {
+            this.url = conf.get(StringOptionInEnvVars.LRC_URL.name());
+        }
+        if (conf.containsKey(StringOptionInEnvVars.LRC_TENANT_ID.name())) {
+            this.tenantId = conf.get(StringOptionInEnvVars.LRC_TENANT_ID.name());
+        }
+        if (conf.containsKey(StringOptionInEnvVars.LRC_USERNAME.name())) {
+            this.username = conf.get(StringOptionInEnvVars.LRC_USERNAME.name());
+        }
+        if (conf.containsKey(StringOptionInEnvVars.LRC_PASSWORD.name())) {
+            this.password = Secret.fromString(conf.get(StringOptionInEnvVars.LRC_PASSWORD.name()));
+        }
+    }
 }
