@@ -44,8 +44,10 @@ class LoadTestRunService(
 
                 return testRun
             } else {
-                loggerProxy.error("Failed to fetch run $runId. HTTP status code: ${response.code}, " +
-                        "body: ${response.body?.string()?.take(512)}")
+                loggerProxy.error(
+                    "Failed to fetch run $runId. HTTP status code: ${response.code}, " +
+                            "body: ${response.body?.string()?.take(512)}"
+                )
                 return null
             }
         }
@@ -73,8 +75,10 @@ class LoadTestRunService(
                     throw IOException("Unauthorized")
                 }
 
-                throw IOException("Failed to fetch run ${testRun.id}. HTTP status code: ${response.code}, " +
-                        "body: ${response.body?.string()?.take(512)}")
+                throw IOException(
+                    "Failed to fetch run ${testRun.id}. HTTP status code: ${response.code}, " +
+                            "body: ${response.body?.string()?.take(512)}"
+                )
             }
         }
     }

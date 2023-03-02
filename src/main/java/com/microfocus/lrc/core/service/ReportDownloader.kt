@@ -169,8 +169,10 @@ class ReportDownloader(
 
     fun genXmlFile(testRun: LoadTestRun) {
         val fileName = genFileName("xml", testRun)
-        val reportUrl = "${this.apiClient.getServerConfiguration().url}/run-overview/${testRun.id}/report/?TENANTID=${this.apiClient.getServerConfiguration().tenantId}&projectId=${this.apiClient.getServerConfiguration().projectId}"
-        val dashboardUrl = "${this.apiClient.getServerConfiguration().url}/run-overview/${testRun.id}/dashboard/?TENANTID=${this.apiClient.getServerConfiguration().tenantId}&projectId=${this.apiClient.getServerConfiguration().projectId}"
+        val reportUrl =
+            "${this.apiClient.getServerConfiguration().url}/run-overview/${testRun.id}/report/?TENANTID=${this.apiClient.getServerConfiguration().tenantId}&projectId=${this.apiClient.getServerConfiguration().projectId}"
+        val dashboardUrl =
+            "${this.apiClient.getServerConfiguration().url}/run-overview/${testRun.id}/dashboard/?TENANTID=${this.apiClient.getServerConfiguration().tenantId}&projectId=${this.apiClient.getServerConfiguration().projectId}"
 
         if (testRun.statusEnum != TestRunStatus.ABORTED) {
             this.loggerProxy.info("View report at: $reportUrl")
@@ -180,7 +182,8 @@ class ReportDownloader(
         var slaInfo: String? = null
         if (testRun.hasReport &&
             (testRun.statusEnum == TestRunStatus.FAILED) &&
-            testRun.transactions.isNotEmpty()) {
+            testRun.transactions.isNotEmpty()
+        ) {
             slaInfo = getSlaInfo(testRun)
         }
 
@@ -240,7 +243,8 @@ class ReportDownloader(
     private fun initScriptTransactionsMap(loadTestTransactions: Array<LoadTestTransactionsResponse>): HashMap<Int, HashMap<String, LoadTestTransactionsResponse>> {
         val scriptTransactionsMap = HashMap<Int, HashMap<String, LoadTestTransactionsResponse>>()
         for (transaction in loadTestTransactions) {
-            var transactions: HashMap<String, LoadTestTransactionsResponse>? = scriptTransactionsMap[transaction.testScriptId]
+            var transactions: HashMap<String, LoadTestTransactionsResponse>? =
+                scriptTransactionsMap[transaction.testScriptId]
             if (transactions == null) {
                 transactions = HashMap()
             }
@@ -291,7 +295,7 @@ class ReportDownloader(
 
         testRunTrtSummary.forEach { transaction ->
             val transactions = scriptTransactionsMap[transaction.loadTestScriptId]
-            if (transactions != null){
+            if (transactions != null) {
                 val loadTestTransaction = transactions[transaction.name]
                 if ((loadTestTransaction != null) && loadTestTransaction.failedTrxEnabled) {
                     val trxDeviation = 100 - transaction.successRate - loadTestTransaction.failedTrxRatio

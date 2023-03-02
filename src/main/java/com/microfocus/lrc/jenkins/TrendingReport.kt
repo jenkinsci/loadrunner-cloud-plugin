@@ -135,6 +135,7 @@ class TrendingReport {
             val trendingDataWrapperList: List<JsonObject> =
                 latestBuildsHasTrendingDataAndSameTestId.stream().map { b: Run<*, *> ->
                     val tempTrd = JsonObject()
+
                     @SuppressWarnings("kotlin:S1874")
                     val trendingDataWrapper: TrendingDataWrapper =
                         b.getAction(TestRunReportBuildAction::class.java).trendingDataWrapper

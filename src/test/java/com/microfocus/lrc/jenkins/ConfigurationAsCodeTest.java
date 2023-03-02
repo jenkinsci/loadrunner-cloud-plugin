@@ -26,6 +26,12 @@ import static io.jenkins.plugins.casc.misc.Util.*;
 import static org.junit.Assert.*;
 
 public class ConfigurationAsCodeTest {
+    private static final String USERNAME = "lrc@microfocus.com";
+    private static final String TENANTID = "123456789";
+    private static final String URL = "https://loadrunner-cloud.saas.microfocus.com";
+    private static final String PROXYHOST = "172.31.128.1";
+    private static final String PROXYPORT = "8080";
+    private static final String CLIENT_ID = "oauth2-XXXXXXXXXXXXXXXXXXXX@microfocus.com";
     @Rule
     public JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
 
@@ -82,11 +88,4 @@ public class ConfigurationAsCodeTest {
             jsonObject.getString("proxyPassword");
         });
     }
-
-    private static final String USERNAME = "lrc@microfocus.com";
-    private static final String TENANTID = "123456789";
-    private static final String URL = "https://loadrunner-cloud.saas.microfocus.com";
-    private static final String PROXYHOST = "172.31.128.1";
-    private static final String PROXYPORT = "8080";
-    private static final String CLIENT_ID = "oauth2-XXXXXXXXXXXXXXXXXXXX@microfocus.com";
 }

@@ -47,18 +47,86 @@ import java.util.Map;
 
 public final class TestRunPublisher extends Recorder implements SimpleBuildStep {
 
+    static final int RUN_COUNT_MIN = 5;
+    static final int RUN_COUNT_MAX = 10;
+    static final int PERCENTAGE_MAX = 100;
+    static final int PERCENTAGE_DEFAULT_MIN = 5;
+    static final int PERCENTAGE_DEFAULT_MAX = 10;
     private final Integer runsCount;
     private final Integer benchmark;
-
     private final Integer trtPercentileThresholdImprovement;
     private final Integer trtPercentileThresholdMinorRegression;
-    private Integer trtPercentileThresholdMajorRegression;
-
     private final Integer trtAvgThresholdImprovement;
     private final Integer trtAvgThresholdMinorRegression;
+    private Integer trtPercentileThresholdMajorRegression;
     private Integer trtAvgThresholdMajorRegression;
-
     private TrendingConfiguration trendingConfig;
+
+    @SuppressWarnings({"checkstyle:MissingJavadocMethod", "checkstyle:ParameterNumber", "java:S107"})
+    @DataBoundConstructor
+    public TestRunPublisher(
+            final Integer runsCount,
+            final Integer benchmark,
+            final Integer trtAvgThresholdImprovement,
+            final Integer trtAvgThresholdMinorRegression,
+            final Integer trtAvgThresholdMajorRegression,
+            final Integer trtPercentileThresholdImprovement,
+            final Integer trtPercentileThresholdMinorRegression,
+            final Integer trtPercentileThresholdMajorRegression
+    ) {
+        this.benchmark = this.checkBenchmark(benchmark);
+        this.runsCount = this.checkRunsCount(runsCount, RUN_COUNT_MIN, RUN_COUNT_MAX);
+
+        this.trtAvgThresholdImprovement = setDefaultValue(
+                trtAvgThresholdImprovement,
+                1,
+                PERCENTAGE_MAX,
+                PERCENTAGE_DEFAULT_MIN
+        );
+
+        this.trtAvgThresholdMinorRegression = setDefaultValue(
+                trtAvgThresholdMinorRegression,
+                1,
+                PERCENTAGE_MAX,
+                PERCENTAGE_DEFAULT_MIN
+        );
+
+        this.trtAvgThresholdMajorRegression = setDefaultValue(
+                trtAvgThresholdMajorRegression,
+                1,
+                PERCENTAGE_MAX,
+                PERCENTAGE_DEFAULT_MAX
+        );
+
+        if (this.trtAvgThresholdMajorRegression <= this.trtAvgThresholdMinorRegression) {
+            this.trtAvgThresholdMajorRegression = this.trtAvgThresholdMinorRegression + 1;
+        }
+
+        this.trtPercentileThresholdImprovement = setDefaultValue(
+                trtPercentileThresholdImprovement,
+                1,
+                PERCENTAGE_MAX,
+                PERCENTAGE_DEFAULT_MIN
+        );
+
+        this.trtPercentileThresholdMinorRegression = setDefaultValue(
+                trtPercentileThresholdMinorRegression,
+                1,
+                PERCENTAGE_MAX,
+                PERCENTAGE_DEFAULT_MIN
+        );
+
+        this.trtPercentileThresholdMajorRegression = setDefaultValue(
+                trtPercentileThresholdMajorRegression,
+                1,
+                PERCENTAGE_MAX,
+                PERCENTAGE_DEFAULT_MAX
+        );
+
+        if (this.trtPercentileThresholdMajorRegression <= this.trtPercentileThresholdMinorRegression) {
+            this.trtPercentileThresholdMajorRegression = this.trtPercentileThresholdMinorRegression + 1;
+        }
+    }
 
     private TrendingConfiguration getTrendingConfig() {
         if (this.trendingConfig == null) {
@@ -80,48 +148,6 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
     @Override
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
-    }
-
-    private static class PublishReportCallable extends MasterToSlaveCallable<TrendingDataWrapper, RuntimeException> {
-
-        private final ServerConfiguration serverConfiguration;
-        private final TrendingConfiguration trendingConfiguration;
-        private final LoadTestRun testRun;
-        private final TestRunOptions options;
-        private final TaskListener listener;
-
-        private PrintStream logger() {
-            return this.listener.getLogger();
-        }
-
-        PublishReportCallable(
-                final ServerConfiguration serverConfiguration,
-                final TrendingConfiguration trendingConfiguration,
-                final LoadTestRun testRun,
-                final TestRunOptions options,
-                final TaskListener listener
-        ) {
-            this.serverConfiguration = serverConfiguration;
-            this.trendingConfiguration = trendingConfiguration;
-            this.testRun = testRun;
-            this.options = options;
-            this.listener = listener;
-        }
-
-        @Override
-        public TrendingDataWrapper call() throws RuntimeException {
-            try {
-                Runner runner = new Runner(
-                        serverConfiguration,
-                        this.listener.getLogger(),
-                        options
-                );
-                return runner.fetchTrending(testRun, trendingConfiguration.getBenchmark());
-            } catch (Exception e) {
-                logger().println("Error while publishing report: " + e.getMessage());
-                return null;
-            }
-        }
     }
 
     private TestRunReportBuildAction saveTrendingDataToJenkinsAction(
@@ -297,78 +323,6 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
         );
     }
 
-    static final int RUN_COUNT_MIN = 5;
-    static final int RUN_COUNT_MAX = 10;
-    static final int PERCENTAGE_MAX = 100;
-    static final int PERCENTAGE_DEFAULT_MIN = 5;
-    static final int PERCENTAGE_DEFAULT_MAX = 10;
-
-    @SuppressWarnings({"checkstyle:MissingJavadocMethod", "checkstyle:ParameterNumber", "java:S107"})
-    @DataBoundConstructor
-    public TestRunPublisher(
-            final Integer runsCount,
-            final Integer benchmark,
-            final Integer trtAvgThresholdImprovement,
-            final Integer trtAvgThresholdMinorRegression,
-            final Integer trtAvgThresholdMajorRegression,
-            final Integer trtPercentileThresholdImprovement,
-            final Integer trtPercentileThresholdMinorRegression,
-            final Integer trtPercentileThresholdMajorRegression
-    ) {
-        this.benchmark = this.checkBenchmark(benchmark);
-        this.runsCount = this.checkRunsCount(runsCount, RUN_COUNT_MIN, RUN_COUNT_MAX);
-
-        this.trtAvgThresholdImprovement = setDefaultValue(
-                trtAvgThresholdImprovement,
-                1,
-                PERCENTAGE_MAX,
-                PERCENTAGE_DEFAULT_MIN
-        );
-
-        this.trtAvgThresholdMinorRegression = setDefaultValue(
-                trtAvgThresholdMinorRegression,
-                1,
-                PERCENTAGE_MAX,
-                PERCENTAGE_DEFAULT_MIN
-        );
-
-        this.trtAvgThresholdMajorRegression = setDefaultValue(
-                trtAvgThresholdMajorRegression,
-                1,
-                PERCENTAGE_MAX,
-                PERCENTAGE_DEFAULT_MAX
-        );
-
-        if (this.trtAvgThresholdMajorRegression <= this.trtAvgThresholdMinorRegression) {
-            this.trtAvgThresholdMajorRegression = this.trtAvgThresholdMinorRegression + 1;
-        }
-
-        this.trtPercentileThresholdImprovement = setDefaultValue(
-                trtPercentileThresholdImprovement,
-                1,
-                PERCENTAGE_MAX,
-                PERCENTAGE_DEFAULT_MIN
-        );
-
-        this.trtPercentileThresholdMinorRegression = setDefaultValue(
-                trtPercentileThresholdMinorRegression,
-                1,
-                PERCENTAGE_MAX,
-                PERCENTAGE_DEFAULT_MIN
-        );
-
-        this.trtPercentileThresholdMajorRegression = setDefaultValue(
-                trtPercentileThresholdMajorRegression,
-                1,
-                PERCENTAGE_MAX,
-                PERCENTAGE_DEFAULT_MAX
-        );
-
-        if (this.trtPercentileThresholdMajorRegression <= this.trtPercentileThresholdMinorRegression) {
-            this.trtPercentileThresholdMajorRegression = this.trtPercentileThresholdMinorRegression + 1;
-        }
-    }
-
     private Integer setDefaultValue(
             final Integer val,
             final Integer min,
@@ -443,20 +397,53 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
         return trtAvgThresholdMajorRegression;
     }
 
+    private static class PublishReportCallable extends MasterToSlaveCallable<TrendingDataWrapper, RuntimeException> {
+
+        private final ServerConfiguration serverConfiguration;
+        private final TrendingConfiguration trendingConfiguration;
+        private final LoadTestRun testRun;
+        private final TestRunOptions options;
+        private final TaskListener listener;
+
+        PublishReportCallable(
+                final ServerConfiguration serverConfiguration,
+                final TrendingConfiguration trendingConfiguration,
+                final LoadTestRun testRun,
+                final TestRunOptions options,
+                final TaskListener listener
+        ) {
+            this.serverConfiguration = serverConfiguration;
+            this.trendingConfiguration = trendingConfiguration;
+            this.testRun = testRun;
+            this.options = options;
+            this.listener = listener;
+        }
+
+        private PrintStream logger() {
+            return this.listener.getLogger();
+        }
+
+        @Override
+        public TrendingDataWrapper call() throws RuntimeException {
+            try {
+                Runner runner = new Runner(
+                        serverConfiguration,
+                        this.listener.getLogger(),
+                        options
+                );
+                return runner.fetchTrending(testRun, trendingConfiguration.getBenchmark());
+            } catch (Exception e) {
+                logger().println("Error while publishing report: " + e.getMessage());
+                return null;
+            }
+        }
+    }
+
     //#endregion
 
     @Symbol("lrcGenTrendingReport")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-        @Override
-        public String getDisplayName() {
-            return "Generate LoadRunner Cloud trending report";
-        }
-
-        public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
-            return true;
-        }
-
         private static Integer getIntegerSafely(final String str) {
             Integer result = null;
             try {
@@ -466,6 +453,15 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
             }
 
             return result;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Generate LoadRunner Cloud trending report";
+        }
+
+        public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
+            return true;
         }
 
         //#region formValidation

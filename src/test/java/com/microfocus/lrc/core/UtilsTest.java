@@ -14,7 +14,7 @@ package com.microfocus.lrc.core;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class UtilsTest {
 

@@ -17,22 +17,26 @@ abstract class BaseApiPath(val variables: Map<String, String>) {
     open val httpMethod: String = "GET"
 }
 
-class ApiGetLoadTest(variables: Map<String, String>): BaseApiPath(variables) {
-    override val path: String = "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}"
+class ApiGetLoadTest(variables: Map<String, String>) : BaseApiPath(variables) {
+    override val path: String =
+        "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}"
 }
 
 class ApiStartTestRun(variables: Map<String, String>) : BaseApiPath(variables) {
-    override val path: String = "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/runs"
+    override val path: String =
+        "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/runs"
     override val httpMethod: String = "POST"
 }
 
 class ApiGetLoadTestTransactions(variables: Map<String, String>) : BaseApiPath(variables) {
-    override val path: String = "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/transactions"
+    override val path: String =
+        "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/transactions"
     override val httpMethod: String = "GET"
 }
 
 class ApiGetLoadTestPercentile(variables: Map<String, String>) : BaseApiPath(variables) {
-    override val path: String = "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/sla/percentile"
+    override val path: String =
+        "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/sla/percentile"
     override val httpMethod: String = "GET"
 }
 
@@ -45,31 +49,31 @@ class ApiChangeTestRunStatus(variables: Map<String, String>) : BaseApiPath(varia
     override val httpMethod: String = "PUT"
 }
 
-class ApiGetTestRun(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiGetTestRun(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}"
 }
 
-class ApiGenTestRunReport(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiGenTestRunReport(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/reports"
     override val httpMethod: String = "POST"
 }
 
-class ApiTestRunReport(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiTestRunReport(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/reports/${this.variables["reportId"]}"
     override val httpMethod: String = "GET"
 }
 
-class ApiTestRunResults(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiTestRunResults(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/results"
     override val httpMethod: String = "GET"
 }
 
-class ApiTestRunTransctions(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiTestRunTransctions(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/transactions"
     override val httpMethod: String = "GET"
 }
 
-class ApiTestRunTrtSummary(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiTestRunTrtSummary(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/runtime/trt-summary"
     override val httpMethod: String = "GET"
 }

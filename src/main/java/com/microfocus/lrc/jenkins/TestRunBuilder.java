@@ -30,11 +30,11 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import hudson.util.VersionNumber;
-import jenkins.security.MasterToSlaveCallable;
-import org.apache.commons.lang.StringUtils;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -46,11 +46,42 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.microfocus.lrc.core.Utils.*;
 
 public final class TestRunBuilder extends Builder implements SimpleBuildStep {
+
+    private String testId;
+    private boolean sendEmail;
+    private String projectId;
+    @SuppressWarnings("java:S2065")
+    private transient LoggerProxy loggerProxy = new LoggerProxy();
+    @SuppressWarnings("java:S2065")
+    private transient HashMap<String, Boolean> isLogPrinted;
+
+    @DataBoundConstructor
+    public TestRunBuilder(
+            final @NonNull String projectId,
+            final @NonNull String testId,
+            final boolean sendEmail
+    ) {
+        this.setProjectId(projectId.trim());
+        this.setTestId(testId.trim());
+        this.setSendEmail(sendEmail);
+    }
+
+    static Map<String, String> readStringConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
+        Map<String, String> map = new HashMap<>();
+        for (StringOptionInEnvVars key : StringOptionInEnvVars.values()) {
+            String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
+            if (StringUtils.isNotBlank(value)) {
+                map.put(key.name(), value.trim());
+            }
+        }
+        return map;
+    }
 
     public String getTestId() {
         return testId;
@@ -78,438 +109,6 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
     public void setProjectId(final String projectId) {
         this.projectId = projectId;
     }
-    //#endregion
-
-    @Symbol("lrcRunTest")
-    @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
-        public DescriptorImpl() {
-            load();
-        }
-
-        public String getUser() {
-            if (Boolean.TRUE.equals(this.useOAuth)) {
-                return this.clientId;
-            } else {
-                return this.username;
-            }
-        }
-
-        public String getPswd() {
-            if (Boolean.TRUE.equals(this.useOAuth)) {
-                return (this.clientSecret != null) ? this.clientSecret.getPlainText() : "";
-            } else {
-                return (this.password != null) ? this.password.getPlainText() : "";
-            }
-        }
-
-        @Override
-        public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
-            return true;
-        }
-
-        @NonNull
-        @Override
-        public String getDisplayName() {
-            return "Run test in LoadRunner Cloud";
-        }
-
-        private String getStringConfig(final JSONObject data, final String key) {
-            try {
-                String val = data.getString(key);
-                if (StringUtils.isNotEmpty(val)) {
-                    return val.trim();
-                }
-
-                return "";
-            } catch (Exception e) {
-                return "";
-            }
-        }
-
-        private Secret getPasswordConfig(final JSONObject data, final String key) {
-            String val = this.getStringConfig(data, key);
-            if (StringUtils.isBlank(val)) {
-                return null;
-            } else {
-                return Secret.fromString(val);
-            }
-        }
-
-        private Boolean getBooleanConfig(final JSONObject data, final String key) {
-            try {
-                return Boolean.valueOf(this.getStringConfig(data, key));
-            } catch (Exception e) {
-                return Boolean.FALSE;
-            }
-        }
-
-        @Override
-        public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
-            // set all properties from formData
-            // validate all properties, throw FormException if invalid
-            this.username = this.getStringConfig(formData, Constants.USERNAME);
-            this.password = this.getPasswordConfig(formData, Constants.PASSWORD);
-            this.url = StringUtils.stripEnd(this.getStringConfig(formData, Constants.URL), "/");
-
-            this.useProxy = this.getBooleanConfig(formData, "useProxy");
-            this.proxyHost = this.getStringConfig(formData, "proxyHost");
-            this.proxyPort =  this.getStringConfig(formData, "proxyPort");
-            if (Utils.isEmpty(this.proxyPort)) {
-                this.proxyPort = null;
-            }
-
-            this.proxyUsername = this.getStringConfig(formData, "proxyUsername");
-            if (Utils.isEmpty(this.proxyUsername)) {
-                this.proxyUsername = null;
-            }
-
-            this.proxyPassword = this.getPasswordConfig(formData, "proxyPassword");
-
-            this.useOAuth = this.getBooleanConfig(formData, Constants.USE_OAUTH);
-            this.clientId = this.getStringConfig(formData, Constants.CLIENT_ID);
-            this.clientSecret = this.getPasswordConfig(formData, Constants.CLIENT_SECRET);
-            this.tenantId = this.getStringConfig(formData, Constants.TENANTID);
-
-            save();
-            return super.configure(req, formData);
-        }
-
-        private String url;
-
-        @POST
-        public FormValidation doCheckUrl(@QueryParameter final String value) {
-            String errorMsg = "Please input a valid URL";
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error(errorMsg);
-            }
-
-            if (!value.matches("\\b(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")) {
-                return FormValidation.error(errorMsg);
-            }
-
-            return FormValidation.ok();
-        }
-
-        private String tenantId;
-
-        @POST
-        public FormValidation doCheckTenantId(@QueryParameter final String value) {
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Tenant ID");
-            }
-
-            return FormValidation.ok();
-        }
-
-        private String username;
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckUsername(
-                @QueryParameter final String value,
-                @QueryParameter final String useOAuth
-        ) {
-            if (Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Username");
-            }
-
-            return FormValidation.ok();
-        }
-
-        private Secret password;
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckPassword(
-                @QueryParameter final String value,
-                final @QueryParameter String useOAuth
-        ) {
-            if (Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Password");
-            }
-
-            return FormValidation.ok();
-        }
-
-        private Boolean useOAuth;
-        private String clientId;
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckClientId(
-                @QueryParameter final String value,
-                @QueryParameter final String useOAuth
-        ) {
-            if (!Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (!ApiClient.isOAuthClientId(value.trim())) {
-                return FormValidation.error("Please input a valid Client ID");
-            }
-
-            return FormValidation.ok();
-        }
-
-        private Secret clientSecret;
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckClientSecret(
-                @QueryParameter final String value,
-                @QueryParameter final String useOAuth
-        ) {
-            if (!Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a valid Client Secret");
-            }
-
-            return FormValidation.ok();
-        }
-
-        private Boolean useProxy;
-        private String proxyHost;
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckProxyHost(
-                @QueryParameter final String value,
-                @QueryParameter final String useProxy
-        ) {
-            if (!Boolean.parseBoolean(useProxy)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Host");
-            }
-
-            return FormValidation.ok();
-        }
-
-
-        private String proxyPort;
-
-        @SuppressWarnings({"checkstyle:HiddenField", "checkstyle:MagicNumber"})
-        @POST
-        public FormValidation doCheckProxyPort(
-                @QueryParameter final String value,
-                @QueryParameter final String useProxy
-        ) {
-            if (!Boolean.parseBoolean(useProxy)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.ok();
-            }
-
-            if (!StringUtils.isNumeric(value)) {
-                return FormValidation.error("Please input a valid port number.");
-            }
-
-            int portVal = Integer.parseInt(value);
-
-            if (portVal < 0 || portVal > 65535) {
-                return FormValidation.error("Please input a valid port number.");
-            }
-
-            return FormValidation.ok();
-        }
-
-        private String proxyUsername;
-        private Secret proxyPassword;
-
-        @POST
-        public FormValidation doCheckProjectID(@QueryParameter final String value) {
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a ProjectID");
-            }
-
-            if (!value.matches("^\\d+$")) {
-                return FormValidation.error("Invalid ProjectID");
-            }
-            return FormValidation.ok();
-        }
-
-        //#region getter/setter
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(final String url) {
-            this.url = url;
-        }
-
-        public String getTenantId() {
-            return tenantId;
-        }
-
-        public void setTenantId(final String tenantId) {
-            this.tenantId = tenantId;
-        }
-
-        public String getClientId() {
-            return clientId;
-        }
-
-        public void setClientId(final String clientId) {
-            this.clientId = clientId;
-        }
-
-        public Secret getClientSecret() {
-            return clientSecret;
-        }
-
-        public void setClientSecret(final Secret clientSecret) {
-            this.clientSecret = clientSecret;
-        }
-
-        public void setClientSecret(final String clientSecret) {
-            this.clientSecret = Secret.fromString(clientSecret);
-        }
-
-        public Boolean getUseProxy() {
-            return useProxy;
-        }
-
-        public void setUseProxy(final Boolean useProxy) {
-            this.useProxy = useProxy;
-        }
-
-        public String getProxyHost() {
-            return proxyHost;
-        }
-
-        public void setProxyHost(final String proxyHost) {
-            this.proxyHost = proxyHost;
-        }
-
-        public String getProxyPort() {
-            return proxyPort;
-        }
-
-        public void setProxyPort(final String proxyPort) {
-            this.proxyPort = proxyPort;
-        }
-
-        public String getProxyUsername() {
-            return proxyUsername;
-        }
-
-        public void setProxyUsername(final String proxyUsername) {
-            this.proxyUsername = proxyUsername;
-        }
-
-        public Secret getProxyPassword() {
-            return proxyPassword;
-        }
-
-        public void setProxyPassword(final Secret proxyPassword) {
-            this.proxyPassword = proxyPassword;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(final String username) {
-            this.username = username;
-        }
-
-        public Secret getPassword() {
-            return password;
-        }
-
-        public void setPassword(final Secret password) {
-            this.password = password;
-        }
-
-        public Boolean getUseOAuth() {
-            return useOAuth;
-        }
-
-        public void setUseOAuth(final Boolean useOAuth) {
-            this.useOAuth = useOAuth;
-        }
-
-        //#endregion
-
-        @SuppressWarnings({"java:S107", "checkstyle:ParameterNumber", "checkstyle:HiddenField"})
-        @POST
-        public FormValidation doTestConnection(
-                @QueryParameter("username") final String username,
-                @QueryParameter("password") final Secret password,
-                @QueryParameter("url") final String url,
-                @QueryParameter("proxyHost") final String proxyHost,
-                @QueryParameter("proxyPort") final String proxyPort,
-                @QueryParameter("proxyUsername") final String proxyUsername,
-                @QueryParameter("proxyPassword") final Secret proxyPassword,
-                @QueryParameter("clientId") final String clientId,
-                @QueryParameter("clientSecret") final Secret clientSecret,
-                @QueryParameter("tenantId") final String tenantId,
-                @QueryParameter("useOAuth") final String useOAuth,
-                @QueryParameter("useProxy") final String useProxy
-        ) {
-            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-            ServerConfiguration config;
-            if (Boolean.parseBoolean(useOAuth)) {
-                config = new ServerConfiguration(
-                        url,
-                        clientId,
-                        (clientSecret != null) ? clientSecret.getPlainText() : "",
-                        tenantId,
-                        0,
-                        false
-                );
-            } else {
-                config = new ServerConfiguration(
-                        url,
-                        username,
-                        (password != null) ? password.getPlainText() : "",
-                        tenantId,
-                        0,
-                        false
-                );
-            }
-            ProxyConfiguration proxyConfiguration = (
-                    ConfigurationFactory.createProxyConfiguration(
-                            url,
-                            Boolean.valueOf(useProxy),
-                            proxyHost,
-                            proxyPort,
-                            proxyUsername,
-                            (proxyPassword != null) ? proxyPassword.getPlainText() : "",
-                            new LoggerProxy()
-                    )
-            );
-            config.setProxyConfiguration(proxyConfiguration);
-            try (ApiClient c = ApiClientFactory.getClient(config, new LoggerProxy())) {
-                c.login();
-                c.validateTenant();
-                return FormValidation.ok("Test connection succeeded!");
-            } catch (Exception e) {
-                return FormValidation.error("Test connection failed, error: " + e.getMessage());
-            }
-        }
-    }
-
-    private String testId;
-    private boolean sendEmail;
-    private String projectId;
 
     private String getProjectIdAtRunTime(final Run<?, ?> run, final Launcher launcher) {
         // check if the job is a pipeline (`WorkflowRun`)
@@ -535,20 +134,6 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         }
 
         return this.testId;
-    }
-
-    @SuppressWarnings("java:S2065")
-    private transient LoggerProxy loggerProxy = new LoggerProxy();
-
-    @DataBoundConstructor
-    public TestRunBuilder(
-            final @NonNull String projectId,
-            final @NonNull String testId,
-            final boolean sendEmail
-    ) {
-        this.setProjectId(projectId.trim());
-        this.setTestId(testId.trim());
-        this.setSendEmail(sendEmail);
     }
 
     private boolean validateJobParameters() {
@@ -759,17 +344,6 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         return map;
     }
 
-    static Map<String, String> readStringConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
-        Map<String, String> map = new HashMap<>();
-        for (StringOptionInEnvVars key : StringOptionInEnvVars.values()) {
-            String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
-            if (StringUtils.isNotBlank(value)) {
-                map.put(key.name(), value.trim());
-            }
-        }
-        return map;
-    }
-
     private void printEnvInfo(final EnvVars env) {
         this.loggerProxy.info(Constants.SEPARATOR_LINE);
         this.loggerProxy.info("Environment information:");
@@ -843,9 +417,6 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         );
     }
 
-    @SuppressWarnings("java:S2065")
-    private transient HashMap<String, Boolean> isLogPrinted;
-
     private void logFieldReadFromParam(
             final String fieldName,
             final Object fieldValue,
@@ -859,6 +430,424 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         if (!isFieldLoggedInCurrentBuild) {
             this.loggerProxy.info(fieldName + " from parameter: " + fieldValue.toString());
             isLogPrinted.put(key, true);
+        }
+    }
+
+    @Symbol("lrcRunTest")
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+
+        private String url;
+        private String tenantId;
+        private String username;
+        private Secret password;
+        private Boolean useOAuth;
+        private String clientId;
+        private Secret clientSecret;
+        private Boolean useProxy;
+        private String proxyHost;
+        private String proxyPort;
+        private String proxyUsername;
+        private Secret proxyPassword;
+
+        public DescriptorImpl() {
+            load();
+        }
+
+        public String getUser() {
+            if (Boolean.TRUE.equals(this.useOAuth)) {
+                return this.clientId;
+            } else {
+                return this.username;
+            }
+        }
+
+        public String getPswd() {
+            if (Boolean.TRUE.equals(this.useOAuth)) {
+                return (this.clientSecret != null) ? this.clientSecret.getPlainText() : "";
+            } else {
+                return (this.password != null) ? this.password.getPlainText() : "";
+            }
+        }
+
+        @Override
+        public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
+            return true;
+        }
+
+        @NonNull
+        @Override
+        public String getDisplayName() {
+            return "Run test in LoadRunner Cloud";
+        }
+
+        private String getStringConfig(final JSONObject data, final String key) {
+            try {
+                String val = data.getString(key);
+                if (StringUtils.isNotEmpty(val)) {
+                    return val.trim();
+                }
+
+                return "";
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        private Secret getPasswordConfig(final JSONObject data, final String key) {
+            String val = this.getStringConfig(data, key);
+            if (StringUtils.isBlank(val)) {
+                return null;
+            } else {
+                return Secret.fromString(val);
+            }
+        }
+
+        private Boolean getBooleanConfig(final JSONObject data, final String key) {
+            try {
+                return Boolean.valueOf(this.getStringConfig(data, key));
+            } catch (Exception e) {
+                return Boolean.FALSE;
+            }
+        }
+
+        @Override
+        public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
+            // set all properties from formData
+            // validate all properties, throw FormException if invalid
+            this.username = this.getStringConfig(formData, Constants.USERNAME);
+            this.password = this.getPasswordConfig(formData, Constants.PASSWORD);
+            this.url = StringUtils.stripEnd(this.getStringConfig(formData, Constants.URL), "/");
+
+            this.useProxy = this.getBooleanConfig(formData, "useProxy");
+            this.proxyHost = this.getStringConfig(formData, "proxyHost");
+            this.proxyPort = this.getStringConfig(formData, "proxyPort");
+            if (Utils.isEmpty(this.proxyPort)) {
+                this.proxyPort = null;
+            }
+
+            this.proxyUsername = this.getStringConfig(formData, "proxyUsername");
+            if (Utils.isEmpty(this.proxyUsername)) {
+                this.proxyUsername = null;
+            }
+
+            this.proxyPassword = this.getPasswordConfig(formData, "proxyPassword");
+
+            this.useOAuth = this.getBooleanConfig(formData, Constants.USE_OAUTH);
+            this.clientId = this.getStringConfig(formData, Constants.CLIENT_ID);
+            this.clientSecret = this.getPasswordConfig(formData, Constants.CLIENT_SECRET);
+            this.tenantId = this.getStringConfig(formData, Constants.TENANTID);
+
+            save();
+            return super.configure(req, formData);
+        }
+
+        @POST
+        public FormValidation doCheckUrl(@QueryParameter final String value) {
+            String errorMsg = "Please input a valid URL";
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error(errorMsg);
+            }
+
+            if (!value.matches("\\b(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")) {
+                return FormValidation.error(errorMsg);
+            }
+
+            return FormValidation.ok();
+        }
+
+        @POST
+        public FormValidation doCheckTenantId(@QueryParameter final String value) {
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error("Please input a Tenant ID");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @SuppressWarnings("checkstyle:HiddenField")
+        @POST
+        public FormValidation doCheckUsername(
+                @QueryParameter final String value,
+                @QueryParameter final String useOAuth
+        ) {
+            if (Boolean.parseBoolean(useOAuth)) {
+                return FormValidation.ok();
+            }
+
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error("Please input a Username");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @SuppressWarnings("checkstyle:HiddenField")
+        @POST
+        public FormValidation doCheckPassword(
+                @QueryParameter final String value,
+                final @QueryParameter String useOAuth
+        ) {
+            if (Boolean.parseBoolean(useOAuth)) {
+                return FormValidation.ok();
+            }
+
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error("Please input a Password");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @SuppressWarnings("checkstyle:HiddenField")
+        @POST
+        public FormValidation doCheckClientId(
+                @QueryParameter final String value,
+                @QueryParameter final String useOAuth
+        ) {
+            if (!Boolean.parseBoolean(useOAuth)) {
+                return FormValidation.ok();
+            }
+
+            if (!ApiClient.isOAuthClientId(value.trim())) {
+                return FormValidation.error("Please input a valid Client ID");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @SuppressWarnings("checkstyle:HiddenField")
+        @POST
+        public FormValidation doCheckClientSecret(
+                @QueryParameter final String value,
+                @QueryParameter final String useOAuth
+        ) {
+            if (!Boolean.parseBoolean(useOAuth)) {
+                return FormValidation.ok();
+            }
+
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error("Please input a valid Client Secret");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @SuppressWarnings("checkstyle:HiddenField")
+        @POST
+        public FormValidation doCheckProxyHost(
+                @QueryParameter final String value,
+                @QueryParameter final String useProxy
+        ) {
+            if (!Boolean.parseBoolean(useProxy)) {
+                return FormValidation.ok();
+            }
+
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error("Please input a Host");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @SuppressWarnings({"checkstyle:HiddenField", "checkstyle:MagicNumber"})
+        @POST
+        public FormValidation doCheckProxyPort(
+                @QueryParameter final String value,
+                @QueryParameter final String useProxy
+        ) {
+            if (!Boolean.parseBoolean(useProxy)) {
+                return FormValidation.ok();
+            }
+
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.ok();
+            }
+
+            if (!StringUtils.isNumeric(value)) {
+                return FormValidation.error("Please input a valid port number.");
+            }
+
+            int portVal = Integer.parseInt(value);
+
+            if (portVal < 0 || portVal > 65535) {
+                return FormValidation.error("Please input a valid port number.");
+            }
+
+            return FormValidation.ok();
+        }
+
+        @POST
+        public FormValidation doCheckProjectID(@QueryParameter final String value) {
+            if (value == null || value.trim().length() == 0) {
+                return FormValidation.error("Please input a ProjectID");
+            }
+
+            if (!value.matches("^\\d+$")) {
+                return FormValidation.error("Invalid ProjectID");
+            }
+            return FormValidation.ok();
+        }
+
+        //#region getter/setter
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(final String url) {
+            this.url = url;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(final String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(final String clientId) {
+            this.clientId = clientId;
+        }
+
+        public Secret getClientSecret() {
+            return clientSecret;
+        }
+
+        public void setClientSecret(final Secret clientSecret) {
+            this.clientSecret = clientSecret;
+        }
+
+        public void setClientSecret(final String clientSecret) {
+            this.clientSecret = Secret.fromString(clientSecret);
+        }
+
+        public Boolean getUseProxy() {
+            return useProxy;
+        }
+
+        public void setUseProxy(final Boolean useProxy) {
+            this.useProxy = useProxy;
+        }
+
+        public String getProxyHost() {
+            return proxyHost;
+        }
+
+        public void setProxyHost(final String proxyHost) {
+            this.proxyHost = proxyHost;
+        }
+
+        public String getProxyPort() {
+            return proxyPort;
+        }
+
+        public void setProxyPort(final String proxyPort) {
+            this.proxyPort = proxyPort;
+        }
+
+        public String getProxyUsername() {
+            return proxyUsername;
+        }
+
+        public void setProxyUsername(final String proxyUsername) {
+            this.proxyUsername = proxyUsername;
+        }
+
+        public Secret getProxyPassword() {
+            return proxyPassword;
+        }
+
+        public void setProxyPassword(final Secret proxyPassword) {
+            this.proxyPassword = proxyPassword;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(final String username) {
+            this.username = username;
+        }
+
+        public Secret getPassword() {
+            return password;
+        }
+
+        public void setPassword(final Secret password) {
+            this.password = password;
+        }
+
+        public Boolean getUseOAuth() {
+            return useOAuth;
+        }
+
+        public void setUseOAuth(final Boolean useOAuth) {
+            this.useOAuth = useOAuth;
+        }
+
+        //#endregion
+
+        @SuppressWarnings({"java:S107", "checkstyle:ParameterNumber", "checkstyle:HiddenField"})
+        @POST
+        public FormValidation doTestConnection(
+                @QueryParameter("username") final String username,
+                @QueryParameter("password") final Secret password,
+                @QueryParameter("url") final String url,
+                @QueryParameter("proxyHost") final String proxyHost,
+                @QueryParameter("proxyPort") final String proxyPort,
+                @QueryParameter("proxyUsername") final String proxyUsername,
+                @QueryParameter("proxyPassword") final Secret proxyPassword,
+                @QueryParameter("clientId") final String clientId,
+                @QueryParameter("clientSecret") final Secret clientSecret,
+                @QueryParameter("tenantId") final String tenantId,
+                @QueryParameter("useOAuth") final String useOAuth,
+                @QueryParameter("useProxy") final String useProxy
+        ) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+            ServerConfiguration config;
+            if (Boolean.parseBoolean(useOAuth)) {
+                config = new ServerConfiguration(
+                        url,
+                        clientId,
+                        (clientSecret != null) ? clientSecret.getPlainText() : "",
+                        tenantId,
+                        0,
+                        false
+                );
+            } else {
+                config = new ServerConfiguration(
+                        url,
+                        username,
+                        (password != null) ? password.getPlainText() : "",
+                        tenantId,
+                        0,
+                        false
+                );
+            }
+            ProxyConfiguration proxyConfiguration = (
+                    ConfigurationFactory.createProxyConfiguration(
+                            url,
+                            Boolean.valueOf(useProxy),
+                            proxyHost,
+                            proxyPort,
+                            proxyUsername,
+                            (proxyPassword != null) ? proxyPassword.getPlainText() : "",
+                            new LoggerProxy()
+                    )
+            );
+            config.setProxyConfiguration(proxyConfiguration);
+            try (ApiClient c = ApiClientFactory.getClient(config, new LoggerProxy())) {
+                c.login();
+                c.validateTenant();
+                return FormValidation.ok("Test connection succeeded!");
+            } catch (Exception e) {
+                return FormValidation.error("Test connection failed, error: " + e.getMessage());
+            }
         }
     }
 

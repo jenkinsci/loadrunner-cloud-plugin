@@ -28,6 +28,11 @@ public final class TestRunReportProjectAction implements Action {
     private Job<?, ?> project;
     private TrendingConfiguration trendingConfig;
 
+    TestRunReportProjectAction(final Job<?, ?> project, final TrendingConfiguration trendingConfig) {
+        this.setProject(project);
+        this.setTrendingConfig(trendingConfig);
+    }
+
     public String getIconFileName() {
         return "notepad.gif";
     }
@@ -49,12 +54,6 @@ public final class TestRunReportProjectAction implements Action {
     public String getUrlName() {
         return "lrc_report";
     }
-
-    TestRunReportProjectAction(final Job<?, ?> project, final TrendingConfiguration trendingConfig) {
-        this.setProject(project);
-        this.setTrendingConfig(trendingConfig);
-    }
-
 
     @SuppressWarnings("java:S2629")
     public void doDynamic(final StaplerRequest req, final StaplerResponse response)

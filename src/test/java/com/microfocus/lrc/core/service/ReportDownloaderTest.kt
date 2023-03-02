@@ -49,7 +49,8 @@ class ReportDownloaderTest {
         val loadTest2 = Gson().fromJson(jsonStr, LoadTest::class.java)
         assert(loadTest2.id == loadTest.id)
 
-        val str = "{\"trendingData\":{\"initDuration\":-1,\"runId\":781,\"testId\":113,\"testName\":\"TEST for TFS\",\"status\":\"PASSED\",\"vusers\":1,\"duration\":85.0,\"percentile\":90,\"avgThroughput\":136151.04,\"totalThroughput\":8849981.44,\"avgHits\":2.123,\"totalHits\":138.0,\"totalTxPassed\":35,\"totalTxFailed\":0,\"errorsPerSec\":0.0,\"startTime\":\"-1\",\"transactions\":[{\"name\":\"Peacefull_FF\",\"script\":\"TC_peacefull_12.56_FF_20_pacing\",\"min\":0.4470002353191376,\"max\":0.5929999351501465,\"avg\":0.5087713599205017,\"nintieth\":0.5849998593330383,\"breakers\":0.0,\"thresholds\":3.0}]},\"tenantId\":\"516042910\"}"
+        val str =
+            "{\"trendingData\":{\"initDuration\":-1,\"runId\":781,\"testId\":113,\"testName\":\"TEST for TFS\",\"status\":\"PASSED\",\"vusers\":1,\"duration\":85.0,\"percentile\":90,\"avgThroughput\":136151.04,\"totalThroughput\":8849981.44,\"avgHits\":2.123,\"totalHits\":138.0,\"totalTxPassed\":35,\"totalTxFailed\":0,\"errorsPerSec\":0.0,\"startTime\":\"-1\",\"transactions\":[{\"name\":\"Peacefull_FF\",\"script\":\"TC_peacefull_12.56_FF_20_pacing\",\"min\":0.4470002353191376,\"max\":0.5929999351501465,\"avg\":0.5087713599205017,\"nintieth\":0.5849998593330383,\"breakers\":0.0,\"thresholds\":3.0}]},\"tenantId\":\"516042910\"}"
         val trendingDataWrapper = Gson().fromJson(str, TrendingDataWrapper::class.java)
         assert(trendingDataWrapper.trendingData.runId == 781)
     }

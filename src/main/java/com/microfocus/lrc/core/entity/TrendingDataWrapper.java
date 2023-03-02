@@ -32,9 +32,9 @@ public final class TrendingDataWrapper implements Serializable {
     static final long serialVersionUID = 1L;
 
     private final TrendingData trendingData;
+    private final String tenantId;
     private TrendingData benchmark;
     private Integer benchmarkId;
-    private final String tenantId;
 
     public TrendingDataWrapper(
             final JsonObject json,
@@ -109,6 +109,33 @@ public final class TrendingDataWrapper implements Serializable {
         private int passed;
         private int failed;
 
+        public TransactionData(final JsonObject json) {
+            JsonObj obj = new JsonObj(json);
+            this.name = json.get("transaction").getAsString();
+            this.script = json.get("script").getAsString();
+            this.min = obj.optDouble("min", 0);
+            this.max = obj.optDouble("max", 0);
+            this.avg = obj.optDouble("avg", 0);
+            this.nintieth = obj.optDouble("nintieth", 0);
+            this.breakers = obj.optDouble("breakers", 0);
+            this.thresholds = obj.optDouble("thresholds", 0);
+            this.passed = obj.optInt("passed", 0);
+            this.failed = obj.optInt("failed", 0);
+        }
+
+        public TransactionData(final TestRunTransactionsResponse tx) {
+            this.name = tx.getName();
+            this.script = tx.getScriptName();
+            this.min = tx.getMinTRT();
+            this.max = tx.getMaxTRT();
+            this.avg = tx.getAvgTRT();
+            this.nintieth = tx.getPercentileTRT();
+            this.breakers = tx.getBreakers();
+            this.thresholds = tx.getSlaThreshold();
+            this.passed = tx.getPassed();
+            this.failed = tx.getFailed();
+        }
+
         //#region accessors
         public String getName() {
             return name;
@@ -181,6 +208,7 @@ public final class TrendingDataWrapper implements Serializable {
         public void setPassed(final int passed) {
             this.passed = passed;
         }
+        //#endregion
 
         public double getFailed() {
             return failed;
@@ -189,43 +217,15 @@ public final class TrendingDataWrapper implements Serializable {
         public void setFailed(final int failed) {
             this.failed = failed;
         }
-        //#endregion
-
-        public TransactionData(final JsonObject json) {
-            JsonObj obj = new JsonObj(json);
-            this.name = json.get("transaction").getAsString();
-            this.script = json.get("script").getAsString();
-            this.min = obj.optDouble("min", 0);
-            this.max = obj.optDouble("max", 0);
-            this.avg = obj.optDouble("avg", 0);
-            this.nintieth = obj.optDouble("nintieth", 0);
-            this.breakers = obj.optDouble("breakers", 0);
-            this.thresholds = obj.optDouble("thresholds", 0);
-            this.passed = obj.optInt("passed", 0);
-            this.failed = obj.optInt("failed", 0);
-        }
-
-        public TransactionData(final TestRunTransactionsResponse tx) {
-            this.name = tx.getName();
-            this.script = tx.getScriptName();
-            this.min = tx.getMinTRT();
-            this.max = tx.getMaxTRT();
-            this.avg = tx.getAvgTRT();
-            this.nintieth = tx.getPercentileTRT();
-            this.breakers = tx.getBreakers();
-            this.thresholds = tx.getSlaThreshold();
-            this.passed = tx.getPassed();
-            this.failed = tx.getFailed();
-        }
     }
 
     public final class TrendingData implements Serializable {
         static final long serialVersionUID = 1L;
-        private int initDuration = -1;
         private final int runId;
+        private final String status;
+        private int initDuration = -1;
         private int testId;
         private String testName;
-        private final String status;
         private int vusers;
         private double duration;
         private int percentile;
@@ -238,51 +238,6 @@ public final class TrendingDataWrapper implements Serializable {
         private double errorsPerSec;
         private String startTime;
         private List<TransactionData> transactions;
-
-        //#region accessors
-        public int getRunId() {
-            return runId;
-        }
-        public double getDuration() {
-            return duration;
-        }
-
-        public int getPercentile() {
-            return percentile;
-        }
-
-        public double getAvgThroughput() {
-            return avgThroughput;
-        }
-
-        public double getTotalThroughput() {
-            return totalThroughput;
-        }
-
-        public double getAvgHits() {
-            return avgHits;
-        }
-
-        public double getTotalHits() {
-            return totalHits;
-        }
-
-        public int getTotalTxPassed() {
-            return totalTxPassed;
-        }
-
-        public int getTotalTxFailed() {
-            return totalTxFailed;
-        }
-
-        public double getErrorsPerSec() {
-            return errorsPerSec;
-        }
-
-        public List<TransactionData> getTransactions() {
-            return transactions;
-        }
-        //#endregion
 
         public TrendingData(final JsonObject json) {
             this.runId = json.get("runId").getAsInt();
@@ -342,6 +297,52 @@ public final class TrendingDataWrapper implements Serializable {
             for (TestRunTransactionsResponse txItem : tx) {
                 this.transactions.add(new TransactionData(txItem));
             }
+        }
+
+        //#region accessors
+        public int getRunId() {
+            return runId;
+        }
+
+        public double getDuration() {
+            return duration;
+        }
+
+        public int getPercentile() {
+            return percentile;
+        }
+
+        public double getAvgThroughput() {
+            return avgThroughput;
+        }
+
+        public double getTotalThroughput() {
+            return totalThroughput;
+        }
+
+        public double getAvgHits() {
+            return avgHits;
+        }
+
+        public double getTotalHits() {
+            return totalHits;
+        }
+
+        public int getTotalTxPassed() {
+            return totalTxPassed;
+        }
+        //#endregion
+
+        public int getTotalTxFailed() {
+            return totalTxFailed;
+        }
+
+        public double getErrorsPerSec() {
+            return errorsPerSec;
+        }
+
+        public List<TransactionData> getTransactions() {
+            return transactions;
         }
 
         public int getTestId() {
