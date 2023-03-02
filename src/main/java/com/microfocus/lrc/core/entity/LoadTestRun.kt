@@ -18,15 +18,13 @@ import java.io.Serializable
 class LoadTestRun(
     val id: Int,
     val loadTest: LoadTest
-): Serializable {
+) : Serializable {
     val statusCode: Int = 200
     var hasReport: Boolean = false
     var detailedStatus: String = "NA"
     var status: String = "NA"
     var isTerminated: Boolean = false
-    @Transient
     val reports: MutableMap<String, Int> = mutableMapOf()
-    @Transient
     val reportsByteArray: MutableMap<String, ByteArray> = mutableMapOf()
     var startTime: Long = -1
     var endTime: Long = -1

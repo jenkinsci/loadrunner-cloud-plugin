@@ -19,11 +19,6 @@ import net.sf.json.JSONArray;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,8 +26,19 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
 
 public final class Utils {
+    public static final int MASK_PREFIX_LEN = 4;
+    public static final int MASK_SUFFIX_LEN = 4;
+
+    private Utils() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static boolean isPositiveInteger(final String str) {
         int val;
         try {
@@ -65,8 +71,6 @@ public final class Utils {
         }
     }
 
-    public static final int MASK_PREFIX_LEN = 4;
-    public static final int MASK_SUFFIX_LEN = 4;
     public static String maskString(final String str, final int prefixLen, final int suffixLen) {
         if (Utils.isEmpty(str)) {
             return str;
@@ -115,9 +119,5 @@ public final class Utils {
         transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
 
         return transformerFactory.newTransformer();
-    }
-
-    private Utils() {
-        throw new IllegalStateException("Utility class");
     }
 }

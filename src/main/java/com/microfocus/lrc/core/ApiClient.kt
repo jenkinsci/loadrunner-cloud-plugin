@@ -30,16 +30,16 @@ import javax.net.ssl.SSLHandshakeException
 class ApiClient internal constructor(
     private val serverConfiguration: ServerConfiguration,
     private val loggerProxy: LoggerProxy
-): Closeable {
+) : Closeable {
     private companion object {
         val MEDIA_TYPE_JSON = Constants.APPLICATION_JSON.toMediaType()
 
         @JvmStatic
         fun isOAuthClientId(username: String?): Boolean {
-            return username != null
-                    && username.length >= 42
+            return ((username != null)
+                    && (username.length >= 42)
                     && username.startsWith("oauth2-")
-                    && username.endsWith("@microfocus.com")
+                    && username.endsWith("@microfocus.com"))
         }
     }
 
@@ -191,7 +191,7 @@ class ApiClient internal constructor(
         }
     }
 
-    fun getReport(reportId: Int) : InputStream? {
+    fun getReport(reportId: Int): InputStream? {
         val apiPath = ApiTestRunReport(
             mapOf(
                 "reportId" to "$reportId",

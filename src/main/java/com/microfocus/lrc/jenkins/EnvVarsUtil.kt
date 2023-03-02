@@ -14,16 +14,11 @@ package com.microfocus.lrc.jenkins
 
 import hudson.EnvVars
 import hudson.Launcher
-import hudson.model.ParameterValue
-import hudson.model.BooleanParameterValue
-import hudson.model.ParametersAction
-import hudson.model.PasswordParameterValue
-import hudson.model.Run
-import hudson.model.StringParameterValue
+import hudson.model.*
 import java.util.logging.Level
 
 class EnvVarsUtil {
-    companion object{
+    companion object {
         @JvmStatic
         fun getEnvVar(build: Run<*, *>, launcher: Launcher, key: String): String? {
             // getAction(Class<T> type) is not deprecated
@@ -36,7 +31,8 @@ class EnvVarsUtil {
                     if (param != null) {
                         var paramValue = ""
                         if ((param is StringParameterValue) ||
-                            (param is BooleanParameterValue)) {
+                            (param is BooleanParameterValue)
+                        ) {
                             paramValue = param.value.toString()
                         } else if (param is PasswordParameterValue) {
                             paramValue = param.value.plainText
@@ -44,7 +40,7 @@ class EnvVarsUtil {
 
                         return paramValue
                     }
-                 }
+                }
 
                 //or try the system env var
                 EnvVars.getRemote(launcher.channel)[key]

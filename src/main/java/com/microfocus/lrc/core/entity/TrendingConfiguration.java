@@ -18,7 +18,7 @@ import java.io.Serializable;
 /**
  * Configuration of trending report, used to get trending data
  * and generate report.
- *
+ * <p>
  * This class will be persisted by Jenkins,
  * as a member field of StormTestReportBuildAction and StormTestReportProjectAction.
  * Any changes could cause the history data broken.
@@ -34,40 +34,6 @@ public final class TrendingConfiguration implements Serializable {
     private final Integer trtAvgTholdImpr;
     private final Integer trtAvgTholdMinorRegr;
     private final Integer trtAvgTholdMajorRegr;
-
-    //#region accessors
-    public Integer getRunsCount() {
-        return runsCount;
-    }
-
-    public Integer getBenchmark() {
-        return benchmark;
-    }
-
-    public Integer getTrtPctlTholdImpr() {
-        return trtPctlTholdImpr;
-    }
-
-    public Integer getTrtPctlTholdMinorRegr() {
-        return trtPctlTholdMinorRegr;
-    }
-
-    public Integer getTrtPctlTholdMajorRegr() {
-        return trtPctlTholdMajorRegr;
-    }
-
-    public Integer getTrtAvgTholdImpr() {
-        return trtAvgTholdImpr;
-    }
-
-    public Integer getTrtAvgTholdMinorRegr() {
-        return trtAvgTholdMinorRegr;
-    }
-
-    public Integer getTrtAvgTholdMajorRegr() {
-        return trtAvgTholdMajorRegr;
-    }
-    //#endregion
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "java:S107"})
     public TrendingConfiguration(
@@ -101,6 +67,40 @@ public final class TrendingConfiguration implements Serializable {
 
         this.isBenchmarkPrev = isBenchmarkPrev;
 
+    }
+
+    //#region accessors
+    public Integer getRunsCount() {
+        return runsCount;
+    }
+
+    public Integer getBenchmark() {
+        return benchmark;
+    }
+
+    public Integer getTrtPctlTholdImpr() {
+        return trtPctlTholdImpr;
+    }
+
+    public Integer getTrtPctlTholdMinorRegr() {
+        return trtPctlTholdMinorRegr;
+    }
+
+    public Integer getTrtPctlTholdMajorRegr() {
+        return trtPctlTholdMajorRegr;
+    }
+
+    public Integer getTrtAvgTholdImpr() {
+        return trtAvgTholdImpr;
+    }
+
+    public Integer getTrtAvgTholdMinorRegr() {
+        return trtAvgTholdMinorRegr;
+    }
+    //#endregion
+
+    public Integer getTrtAvgTholdMajorRegr() {
+        return trtAvgTholdMajorRegr;
     }
 
     public boolean isBenchmarkPrev() {

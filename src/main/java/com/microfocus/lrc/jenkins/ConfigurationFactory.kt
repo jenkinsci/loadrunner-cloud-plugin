@@ -66,7 +66,7 @@ class ConfigurationFactory {
                 loggerProxy.info("  No proxy setting found in Jenkins global settings.")
             }
 
-            if (useProxy != null && useProxy) {
+            if ((useProxy != null) && useProxy) {
                 try {
                     proxyConfiguration = ProxyConfiguration(
                         proxyHost,

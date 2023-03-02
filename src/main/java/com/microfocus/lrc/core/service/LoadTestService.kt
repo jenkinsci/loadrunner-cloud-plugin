@@ -17,9 +17,9 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import com.microfocus.lrc.core.ApiClient
 import com.microfocus.lrc.core.Constants
+import com.microfocus.lrc.core.Utils
 import com.microfocus.lrc.core.entity.*
 import com.microfocus.lrc.jenkins.LoggerProxy
-import com.microfocus.lrc.core.Utils
 import java.io.IOException
 
 class LoadTestService(

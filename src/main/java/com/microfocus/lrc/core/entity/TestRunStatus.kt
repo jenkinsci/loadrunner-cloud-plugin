@@ -19,7 +19,7 @@ interface ITestRunStatus {
     val isSuccess: Boolean
 }
 
-enum class TestRunStatus(val value: String): ITestRunStatus, java.io.Serializable {
+enum class TestRunStatus(val value: String) : ITestRunStatus, java.io.Serializable {
     CHECKING_STATUS("CHECKING_STATUS") {
         override val statusName = "CHECKING_STATUS"
         override val isEnded = false

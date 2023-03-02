@@ -25,11 +25,40 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 
 public final class TestRunReportBuildAction implements RunAction2 {
-    @SuppressWarnings("java:S2065")
-    private transient Run<?, ?> run;
     private final TrendingDataWrapper trendingDataWrapper;
     private final TrendingConfiguration trendingConfig;
+    @SuppressWarnings("java:S2065")
+    private transient Run<?, ?> run;
     private String trendingReportHTML;
+
+    TestRunReportBuildAction(
+            final Run<?, ?> build,
+            final TrendingDataWrapper trendingDataWrapper,
+            final TrendingConfiguration trendingConfig
+    ) {
+        this.trendingDataWrapper = trendingDataWrapper;
+        this.trendingConfig = trendingConfig;
+        this.run = build;
+    }
+
+    public static TestRunReportBuildAction getLastBuildActionHasTrendingData(final Job<?, ?> job) {
+        Run<?, ?> r = (job.getLastBuild());
+        while (true) {
+            if (r == null) {
+                return null;
+            }
+
+            TestRunReportBuildAction buildAction = r.getAction(TestRunReportBuildAction.class);
+            if (buildAction != null) {
+                TrendingDataWrapper trendingDataWrapper = buildAction.getTrendingDataWrapper();
+                if (trendingDataWrapper != null) {
+                    return buildAction;
+                }
+            }
+
+            r = r.getPreviousBuild();
+        }
+    }
 
     public String getIconFileName() {
         return null;
@@ -41,16 +70,6 @@ public final class TestRunReportBuildAction implements RunAction2 {
 
     public String getUrlName() {
         return "lrc_build_report";
-    }
-
-    TestRunReportBuildAction(
-            final Run<?, ?> build,
-            final TrendingDataWrapper trendingDataWrapper,
-            final TrendingConfiguration trendingConfig
-    ) {
-        this.trendingDataWrapper = trendingDataWrapper;
-        this.trendingConfig = trendingConfig;
-        this.run = build;
     }
 
     /**
@@ -103,24 +122,5 @@ public final class TestRunReportBuildAction implements RunAction2 {
 
     public void setTrendingReportHTML(final String trendingReportHTML) {
         this.trendingReportHTML = trendingReportHTML;
-    }
-
-    public static TestRunReportBuildAction getLastBuildActionHasTrendingData(final Job<?, ?> job) {
-        Run<?, ?> r = (job.getLastBuild());
-        while (true) {
-            if (r == null) {
-                return null;
-            }
-
-            TestRunReportBuildAction buildAction = r.getAction(TestRunReportBuildAction.class);
-            if (buildAction != null) {
-                TrendingDataWrapper trendingDataWrapper = buildAction.getTrendingDataWrapper();
-                if (trendingDataWrapper != null) {
-                    return buildAction;
-                }
-            }
-
-            r = r.getPreviousBuild();
-        }
     }
 }

@@ -20,7 +20,7 @@ class TestRunOptions(
     var skipPdfReport: Boolean,
     var isDebug: Boolean,
     var isTestMode: Boolean
-): Serializable {
+) : Serializable {
     constructor(testId: Int, sendEmail: Boolean) : this(
         testId, sendEmail, false, false, false
     )

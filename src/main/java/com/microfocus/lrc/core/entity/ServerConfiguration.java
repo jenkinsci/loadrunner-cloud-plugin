@@ -18,13 +18,33 @@ import java.io.Serializable;
 import java.util.Map;
 
 public final class ServerConfiguration implements Serializable {
+    private final int projectId;
+    private final boolean sendEmail;
     private String url;
     private String username;
     private Secret password;
     private String tenantId;
-    private final int projectId;
     private ProxyConfiguration proxyConfiguration;
-    private final boolean sendEmail;
+
+    /**
+     * constructor.
+     *
+     * @param url
+     * @param username
+     * @param password
+     * @param tenantId
+     * @param projectId
+     * @param sendEmail
+     */
+    public ServerConfiguration(final String url, final String username, final String password, final String tenantId,
+                               final int projectId, final boolean sendEmail) {
+        this.url = url;
+        this.username = username;
+        this.password = Secret.fromString(password);
+        this.tenantId = tenantId;
+        this.projectId = projectId;
+        this.sendEmail = sendEmail;
+    }
 
     // #region getter/setter
     public String getUrl() {
@@ -47,36 +67,17 @@ public final class ServerConfiguration implements Serializable {
         return proxyConfiguration;
     }
 
+    public void setProxyConfiguration(final ProxyConfiguration proxyConfiguration) {
+        this.proxyConfiguration = proxyConfiguration;
+    }
+    // #endregion
+
     public int getProjectId() {
         return projectId;
     }
 
     public boolean isSendEmail() {
         return sendEmail;
-    }
-    // #endregion
-
-    /**
-     * constructor.
-     * @param url
-     * @param username
-     * @param password
-     * @param tenantId
-     * @param projectId
-     * @param sendEmail
-     */
-    public ServerConfiguration(final String url, final String username, final String password, final String tenantId,
-            final int projectId, final boolean sendEmail) {
-        this.url = url;
-        this.username = username;
-        this.password = Secret.fromString(password);
-        this.tenantId = tenantId;
-        this.projectId = projectId;
-        this.sendEmail = sendEmail;
-    }
-
-    public void setProxyConfiguration(final ProxyConfiguration proxyConfiguration) {
-        this.proxyConfiguration = proxyConfiguration;
     }
 
     public void overrideConfig(final Map<String, String> conf) {
