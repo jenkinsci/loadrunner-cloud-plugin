@@ -26,6 +26,16 @@ class ApiStartTestRun(variables: Map<String, String>) : BaseApiPath(variables) {
     override val httpMethod: String = "POST"
 }
 
+class ApiGetLoadTestTransactions(variables: Map<String, String>) : BaseApiPath(variables) {
+    override val path: String = "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/transactions"
+    override val httpMethod: String = "GET"
+}
+
+class ApiGetLoadTestPercentile(variables: Map<String, String>) : BaseApiPath(variables) {
+    override val path: String = "${super.path}/projects/${this.variables["projectId"]}/load-tests/${this.variables["loadTestId"]}/sla/percentile"
+    override val httpMethod: String = "GET"
+}
+
 class ApiGetRunStatus(variables: Map<String, String>) : BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/status"
 }
@@ -54,7 +64,12 @@ class ApiTestRunResults(variables: Map<String, String>): BaseApiPath(variables) 
     override val httpMethod: String = "GET"
 }
 
-class ApiTestRunTx(variables: Map<String, String>): BaseApiPath(variables) {
+class ApiTestRunTransctions(variables: Map<String, String>): BaseApiPath(variables) {
     override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/transactions"
+    override val httpMethod: String = "GET"
+}
+
+class ApiTestRunTrtSummary(variables: Map<String, String>): BaseApiPath(variables) {
+    override val path: String = "${super.path}/test-runs/${this.variables["runId"]}/runtime/trt-summary"
     override val httpMethod: String = "GET"
 }
