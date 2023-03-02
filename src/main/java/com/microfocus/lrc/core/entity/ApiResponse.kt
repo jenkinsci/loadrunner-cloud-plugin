@@ -91,3 +91,30 @@ class TestRunTransactionsResponse(
     val failed: Int,
     val slaTrend: Double,
 )
+
+class TestRunTrtSummaryResponse(
+    val name: String,
+    val loadTestScriptId: Int,
+    val scriptName: String,
+    val maxTRT: Double,
+    val avgTRT: Double,
+    val minTRT: Double,
+    val passed: Int,
+    val failed: Int,
+    val successRate: Double,
+    val avgTPS: Double,
+    val stdDeviation: Double,
+)
+
+class LoadTestTransactionsResponse(
+    val id: Int,
+    val enabled: Boolean,
+    val scriptId: Int,
+    val scriptName: String,
+    val testScriptId: Int,
+    val transactionName: String,
+    val slaPercentileThreshold: Double,
+    val stopOnBreak: Boolean,
+    val failedTrxRatio: Double,
+    val failedTrxEnabled: Boolean,
+)

@@ -140,7 +140,7 @@ public class TestRunBuilderTest {
             mockserver.enqueue(responseReportContent);
         }
 
-        // for report downloading in TestRunBuilder.perform
+        // for report downloading in TestRunPublisher.perform
         MockServerResponseGenerator.mockLogin();
         MockServerResponseGenerator.mockReports();
     }
@@ -204,7 +204,7 @@ public class TestRunBuilderTest {
             mockserver.enqueue(responseReportContent);
         }
 
-        // for report downloading in TestRunBuilder.perform
+        // for report downloading in TestRunPublisher.perform
         MockServerResponseGenerator.mockLogin();
         MockServerResponseGenerator.mockReports();
     }
@@ -270,7 +270,71 @@ public class TestRunBuilderTest {
             mockserver.enqueue(responseReportContent);
         }
 
-        // for report downloading in TestRunBuilder.perform
+        // for report downloading in TestRunPublisher.perform
+        MockServerResponseGenerator.mockLogin();
+        MockServerResponseGenerator.mockReports();
+    }
+
+    private void mockResponseWithFailedRun() {
+        MockServerResponseGenerator.mockLogin();
+
+        MockResponse responseGetLoadTest = new MockResponse();
+        JsonObject loadTestResObj = new JsonObject();
+        loadTestResObj.addProperty("name", "fake_load_test");
+        responseGetLoadTest.setBody(loadTestResObj.toString());
+        mockserver.enqueue(responseGetLoadTest);
+
+        MockResponse responseStartTest = new MockResponse();
+        JsonObject startTestResObj = new JsonObject();
+        startTestResObj.addProperty("runId", -1);
+        responseStartTest.setBody(startTestResObj.toString());
+        mockserver.enqueue(responseStartTest);
+
+        MockResponse responseRunStatus = new MockResponse();
+        JsonObject runStatusResObj = new JsonObject();
+        runStatusResObj.addProperty("status", "INIT");
+        runStatusResObj.addProperty("uiStatus", "INITIALIZING");
+        runStatusResObj.addProperty("isTerminated", false);
+        responseRunStatus.setBody(runStatusResObj.toString());
+        for (int i = 0; i < 2; i++) {
+            mockserver.enqueue(responseRunStatus);
+        }
+
+        runStatusResObj.addProperty("status", TestRunStatus.FAILED.getStatusName());
+        runStatusResObj.addProperty("uiStatus", TestRunStatus.FAILED.getStatusName());
+        runStatusResObj.addProperty("isTerminated", true);
+        MockResponse responseRunStatusDone = new MockResponse().setBody(runStatusResObj.toString());
+        mockserver.enqueue(responseRunStatusDone);
+
+        runStatusResObj.addProperty("hasReport", true);
+        MockResponse responseRunStatusHasReport = new MockResponse().setBody(runStatusResObj.toString());
+        mockserver.enqueue(responseRunStatusHasReport);
+
+        MockServerResponseGenerator.mockTransactions();
+        MockServerResponseGenerator.mockTestPercentile();
+        MockServerResponseGenerator.mockTestTransactions();
+        MockServerResponseGenerator.mockTrtSummary();
+
+        // repeat 2 times for csv and pdf
+        for (int i = 0; i < 2; i += 1) {
+            JsonObject genReportResObj = new JsonObject();
+            genReportResObj.addProperty("reportId", -999);
+            MockResponse responseGenReport = new MockResponse().setBody(genReportResObj.toString());
+            mockserver.enqueue(responseGenReport);
+
+            JsonObject reportStatusResObj = new JsonObject();
+            reportStatusResObj.addProperty("message", "In progress");
+            MockResponse responseReportStatus = new MockResponse().setBody(reportStatusResObj.toString());
+            responseReportStatus.setHeader("Content-Type", Constants.APPLICATION_JSON);
+            mockserver.enqueue(responseReportStatus);
+
+            String fakeReportContent = "FAKE_REPORT_CONTENT";
+            MockResponse responseReportContent = new MockResponse().setBody(fakeReportContent);
+            responseReportContent.setHeader("Content-Type", "application/octet-stream");
+            mockserver.enqueue(responseReportContent);
+        }
+
+        // for report downloading in TestRunPublisher.perform
         MockServerResponseGenerator.mockLogin();
         MockServerResponseGenerator.mockReports();
     }
@@ -280,7 +344,7 @@ public class TestRunBuilderTest {
         EnvVars.masterEnvVars.put(BooleanOptionInEnvVars.LRC_DEBUG_LOG.name(), "false");
         EnvVars.masterEnvVars.put(BooleanOptionInEnvVars.LRC_TEST_MODE.name(), "true");
 
-        for (int i = 0; i < 3; i += 1) {
+        for (int i = 0; i < 4; i += 1) {
             FreeStyleProject project = jenkins.createFreeStyleProject();
             TestRunBuilder builder = new TestRunBuilder("99", "999", false);
             project.getBuildersList().add(builder);
@@ -314,6 +378,9 @@ public class TestRunBuilderTest {
                 case 2:
                     this.mockResponseWithLoginExpired();
                     break;
+                case 3:
+                    this.mockResponseWithFailedRun();
+                    break;
                 default:
                     break;
             }
@@ -326,7 +393,12 @@ public class TestRunBuilderTest {
             assert f != null;
             FreeStyleBuild b = f.get();
 
-            jenkins.assertBuildStatusSuccess(b);
+            if (i != 3) {
+                jenkins.assertBuildStatusSuccess(b);
+            } else {
+                Assert.assertSame(Result.FAILURE, b.getResult());
+            }
+
             BufferedReader rd = new BufferedReader(b.getLogReader());
             while (rd.ready()) {
                 // print jenkins logs for debugging

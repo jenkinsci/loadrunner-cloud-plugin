@@ -55,4 +55,82 @@ class MockServerResponseGenerator {
             responseTransactions.setBody(resJson)
             TestRunBuilderTest.mockserver.enqueue(responseTransactions)
         }
+
+        @JvmStatic
+        fun mockTestPercentile() {
+            val response = MockResponse()
+            val resJson = "{\n" +
+                    "  \"percentile\": 90\n" +
+                    "}"
+            response.setBody(resJson)
+            TestRunBuilderTest.mockserver.enqueue(response)
+        }
+
+        @JvmStatic
+        fun mockTestTransactions() {
+            val response = MockResponse()
+            val resJson = "[\n" +
+                    "  {\n" +
+                    "    \"id\": 58,\n" +
+                    "    \"enabled\": false,\n" +
+                    "    \"scriptId\": 18,\n" +
+                    "    \"testScriptId\": 40,\n" +
+                    "    \"transactionName\": \"Login\",\n" +
+                    "    \"slaPercentileThreshold\": 3,\n" +
+                    "    \"stopOnBreak\": false,\n" +
+                    "    \"scriptName\": \"prodemand-v03_fixed\",\n" +
+                    "    \"failedTrxRatio\": 10,\n" +
+                    "    \"failedTrxEnabled\": false\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"id\": 59,\n" +
+                    "    \"enabled\": false,\n" +
+                    "    \"scriptId\": 18,\n" +
+                    "    \"testScriptId\": 40,\n" +
+                    "    \"transactionName\": \"LandingPage\",\n" +
+                    "    \"slaPercentileThreshold\": 3,\n" +
+                    "    \"stopOnBreak\": false,\n" +
+                    "    \"scriptName\": \"prodemand-v03_fixed\",\n" +
+                    "    \"failedTrxRatio\": 10,\n" +
+                    "    \"failedTrxEnabled\": false\n" +
+                    "  }\n" +
+                    "]"
+            response.setBody(resJson)
+            TestRunBuilderTest.mockserver.enqueue(response)
+        }
+
+        @JvmStatic
+        fun mockTrtSummary() {
+            val response = MockResponse()
+            val resJson = "[\n" +
+                    "  {\n" +
+                    "    \"name\": \"LandingPage\",\n" +
+                    "    \"loadTestScriptId\": 41,\n" +
+                    "    \"scriptName\": \"prodemand-v03\",\n" +
+                    "    \"maxTRT\": 3.0614006519317627,\n" +
+                    "    \"avgTRT\": 2.0746798515319824,\n" +
+                    "    \"minTRT\": 1.8320441246032715,\n" +
+                    "    \"passed\": 46,\n" +
+                    "    \"failed\": 0,\n" +
+                    "    \"successRate\": 100,\n" +
+                    "    \"avgTPS\": 0.03723427074657141,\n" +
+                    "    \"stdDeviation\": 0.2517000435241076\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"name\": \"Login\",\n" +
+                    "    \"loadTestScriptId\": 41,\n" +
+                    "    \"scriptName\": \"prodemand-v03\",\n" +
+                    "    \"maxTRT\": 7.0419111251831055,\n" +
+                    "    \"avgTRT\": 2.9132559299468994,\n" +
+                    "    \"minTRT\": 2.110764980316162,\n" +
+                    "    \"passed\": 46,\n" +
+                    "    \"failed\": 0,\n" +
+                    "    \"successRate\": 100,\n" +
+                    "    \"avgTPS\": 0.03723427074657141,\n" +
+                    "    \"stdDeviation\": 1.228752025001221\n" +
+                    "  }\n" +
+                    "]"
+            response.setBody(resJson)
+            TestRunBuilderTest.mockserver.enqueue(response)
+        }
 }}

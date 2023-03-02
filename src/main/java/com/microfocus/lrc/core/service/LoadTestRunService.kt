@@ -14,13 +14,12 @@ package com.microfocus.lrc.core.service
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.JsonSyntaxException
 import com.microfocus.lrc.core.ApiClient
-import com.microfocus.lrc.core.Constants
+import com.microfocus.lrc.core.Utils
 import com.microfocus.lrc.core.entity.*
 import com.microfocus.lrc.jenkins.LoggerProxy
-import com.microfocus.lrc.core.Utils
 import java.io.IOException
-import java.lang.Exception
 
 class LoadTestRunService(
     private val client: ApiClient,
@@ -123,6 +122,84 @@ class LoadTestRunService(
             }
 
             this.loggerProxy.info("Aborting test run successfully.")
+        }
+    }
+
+    fun getResults(runId: Int): TestRunResultsResponse {
+        val apiPath = ApiTestRunResults(
+            mapOf(
+                "runId" to "$runId",
+            )
+        ).path
+
+        val res = this.client.get(apiPath)
+        res.use {
+            if (res.code != 200) {
+                val msg = "Failed to fetch test run results: ${res.code}, ${res.body?.string()}"
+                this.loggerProxy.info(msg)
+                throw IOException(msg)
+            }
+
+            val body = res.body?.string()
+            // this.loggerProxy.debug("Fetched test run results: $body")
+            try {
+                return Gson().fromJson(body, TestRunResultsResponse::class.java)
+            } catch (e: JsonSyntaxException) {
+                this.loggerProxy.info("Failed to parse test run results: $body")
+                throw e
+            }
+        }
+    }
+
+    fun getTransactions(runId: Int): Array<TestRunTransactionsResponse> {
+        val apiPath = ApiTestRunTransctions(
+            mapOf(
+                "runId" to "$runId",
+            )
+        ).path
+
+        val res = this.client.get(apiPath)
+        res.use {
+            if (res.code != 200) {
+                val msg = "Failed to fetch test run transactions: ${res.code}, ${res.body?.string()}"
+                this.loggerProxy.info(msg)
+                throw IOException(msg)
+            }
+
+            val body = res.body?.string()
+            this.loggerProxy.debug("Fetched transactions results: $body")
+            try {
+                return Gson().fromJson(body, Array<TestRunTransactionsResponse>::class.java)
+            } catch (e: JsonSyntaxException) {
+                this.loggerProxy.info("Failed to parse test run transactions: $body")
+                throw e
+            }
+        }
+    }
+
+    fun getTrtSummary(runId: Int): Array<TestRunTrtSummaryResponse> {
+        val apiPath = ApiTestRunTrtSummary(
+            mapOf(
+                "runId" to "$runId",
+            )
+        ).path
+
+        val res = this.client.get(apiPath)
+        res.use {
+            if (res.code != 200) {
+                val msg = "Failed to fetch test run trt summary: ${res.code}, ${res.body?.string()}"
+                this.loggerProxy.info(msg)
+                throw IOException(msg)
+            }
+
+            val body = res.body?.string()
+            this.loggerProxy.debug("Fetched trt summary results: $body")
+            try {
+                return Gson().fromJson(body, Array<TestRunTrtSummaryResponse>::class.java)
+            } catch (e: JsonSyntaxException) {
+                this.loggerProxy.info("Failed to parse test run trt summary: $body")
+                throw e
+            }
         }
     }
 }

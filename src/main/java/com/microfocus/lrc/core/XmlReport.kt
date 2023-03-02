@@ -29,6 +29,7 @@ class XmlReport {
             testRun: LoadTestRun,
             reportUrl: String,
             dashboardUrl: String,
+            slaInfo: String?,
         ): ByteArray {
             val xml = Utils.newXmlDocument()
             val isFailure: Boolean = TestRunStatus.PASSED.statusName != testRun.detailedStatus
@@ -102,6 +103,11 @@ class XmlReport {
                 val failureEle = xml.createElement("failure")
                 failureEle.setAttribute("message", "Test run status is ${testRun.detailedStatus}")
                 failureEle.setAttribute("type", testRun.detailedStatus)
+
+                if (!Utils.isEmpty(slaInfo)) {
+                    failureEle.textContent = slaInfo
+                }
+
                 testcase.appendChild(failureEle)
             }
 

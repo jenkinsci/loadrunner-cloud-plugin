@@ -24,7 +24,9 @@ class LoadTestRun(
     var detailedStatus: String = "NA"
     var status: String = "NA"
     var isTerminated: Boolean = false
+    @Transient
     val reports: MutableMap<String, Int> = mutableMapOf()
+    @Transient
     val reportsByteArray: MutableMap<String, ByteArray> = mutableMapOf()
     var startTime: Long = -1
     var endTime: Long = -1
@@ -34,6 +36,9 @@ class LoadTestRun(
             field = value
             detailedStatus = value.name
         }
+
+    @Transient
+    var transactions = arrayOf<TestRunTransactionsResponse>()
 
     fun testRunCompletelyEnded(): Boolean {
         return this.statusEnum.isEnded && this.isTerminated

@@ -12,12 +12,12 @@
 
 package com.microfocus.lrc.core.service
 
+import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.JsonSyntaxException
 import com.microfocus.lrc.core.ApiClient
 import com.microfocus.lrc.core.Constants
-import com.microfocus.lrc.core.entity.ApiGetLoadTest
-import com.microfocus.lrc.core.entity.ApiStartTestRun
-import com.microfocus.lrc.core.entity.LoadTest
+import com.microfocus.lrc.core.entity.*
 import com.microfocus.lrc.jenkins.LoggerProxy
 import com.microfocus.lrc.core.Utils
 import java.io.IOException
@@ -74,4 +74,51 @@ class LoadTestService(
             }
         }
     }
+
+    fun getTransactions(id: Int): Array<LoadTestTransactionsResponse> {
+        val apiPath = ApiGetLoadTestTransactions(
+            mapOf(
+                "projectId" to "${this.client.getServerConfiguration().projectId}",
+                "loadTestId" to "$id"
+            )
+        ).path
+        val res = this.client.get(apiPath)
+        res.use {
+            if (res.code != 200) {
+                val msg = "Failed to fetch load tests transactions: ${res.code}, ${res.body?.string()}"
+                this.loggerProxy.info(msg)
+                throw IOException(msg)
+            }
+
+            val body = res.body?.string()
+            this.loggerProxy.debug("Fetched load tests transactions results: $body")
+            try {
+                return Gson().fromJson(body, Array<LoadTestTransactionsResponse>::class.java)
+            } catch (e: JsonSyntaxException) {
+                this.loggerProxy.info("Failed to parse load tests transactions: $body")
+                throw e
+            }
+        }
+    }
+
+    fun getPercentile(id: Int): Int {
+        val apiPath = ApiGetLoadTestPercentile(
+            mapOf(
+                "projectId" to "${this.client.getServerConfiguration().projectId}",
+                "loadTestId" to "$id"
+            )
+        ).path
+        val res = this.client.get(apiPath)
+        res.use {
+            val code = res.code
+            val bodyString = res.body?.string()
+            if (code == 200) {
+                val resObj = Utils.parseJsonString(bodyString, "Failed to parse load test percentile")
+                return resObj.get("percentile").asInt
+            } else {
+                throw IOException("Failed to get percentile for load test #$id. error: $bodyString")
+            }
+        }
+    }
+
 }

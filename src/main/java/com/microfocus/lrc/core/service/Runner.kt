@@ -82,8 +82,10 @@ class Runner(
 
         this.loadTestRunService.fetchStatus(testRun)
         if (testRun.hasReport) {
-            this.reportDownloader.genXmlFile(testRun)
+            testRun.transactions = this.loadTestRunService.getTransactions(testRun.id)
+
             this.reportDownloader.genTxCsv(testRun)
+            this.reportDownloader.genXmlFile(testRun)
             this.reportDownloader.download(testRun, arrayOf("csv", "pdf"))
         } else {
             this.loggerProxy.info("Test run #${testRun.id} doesn\'t have run results.")
