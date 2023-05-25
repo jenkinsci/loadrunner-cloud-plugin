@@ -25,7 +25,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
-import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLException
 
 class ApiClient internal constructor(
     private val serverConfiguration: ServerConfiguration,
@@ -84,9 +84,11 @@ class ApiClient internal constructor(
         try {
             return this.getOkhttpClient().newCall(reqBuilder.build()).execute()
         } catch (ex: UnknownHostException) {
-            throw IOException("Unable to resolve hostname: ${ex.message}. Check your configuration")
-        } catch (ex: SSLHandshakeException) {
-            throw IOException("Unable to connect server. Check if you are behind a proxy or firewall")
+            this.loggerProxy.error("Unknown host. Check your configuration.")
+            throw ex
+        } catch (ex: SSLException) {
+            this.loggerProxy.error("SSL exception occurred. Check if you are behind a proxy or firewall.")
+            throw ex
         }
     }
 

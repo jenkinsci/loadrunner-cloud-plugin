@@ -135,7 +135,7 @@ class Runner(
 
                 retryTimes++
                 if (retryTimes >= maxRetry) {
-                    logger.println("Retried $maxRetry times, abort")
+                    this.loggerProxy.error("Retried $maxRetry times, abort")
                     throw e
                 }
                 this.loggerProxy.error("Failed to fetch test run status: ${e.message}")
