@@ -12,9 +12,9 @@
 
 package com.microfocus.lrc.jenkins;
 
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import org.htmlunit.html.HtmlElement;
+import org.htmlunit.html.HtmlForm;
+import org.htmlunit.html.HtmlInput;
 import com.google.gson.JsonObject;
 import com.microfocus.lrc.MockServerResponseGenerator;
 import com.microfocus.lrc.core.Constants;
@@ -75,7 +75,7 @@ public class TestRunBuilderTest {
             HtmlElement div = form.getElementsByAttribute("div", "name", "com-microfocus-lrc-jenkins-TestRunBuilder").get(0);
             HtmlElement pDiv = (HtmlElement) div.getParentNode();
             HtmlInput urlInput = (HtmlInput) pDiv.getElementsByAttribute("input", "name", "_.url").get(0);
-            urlInput.setValueAttribute("FAKE_URL");
+            urlInput.setValue("FAKE_URL");
             jenkins.submit(form);
 
             client.goTo("configure").refresh();
