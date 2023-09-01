@@ -174,12 +174,12 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
             }
         }
 
-        if (Utils.isEmpty(descriptor.getTenantId())) {
+        if (!Utils.isValidLRCTenant(descriptor.getTenantId())) {
             this.loggerProxy.error("invalid parameter: tenant");
             return false;
         }
 
-        if (Utils.isEmpty(descriptor.getUrl()) || !Utils.isValidUrl(descriptor.getUrl())) {
+        if (Utils.isEmpty(descriptor.getUrl()) || !Utils.isValidLRCUrl(descriptor.getUrl())) {
             this.loggerProxy.error("invalid parameter: url");
             return false;
         }
@@ -809,26 +809,34 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 @QueryParameter("useProxy") final String useProxy
         ) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-            ServerConfiguration config;
-            if (Boolean.parseBoolean(useOAuth)) {
-                config = new ServerConfiguration(
-                        url,
-                        clientId,
-                        (clientSecret != null) ? clientSecret.getPlainText() : "",
-                        tenantId,
-                        0,
-                        false
-                );
-            } else {
-                config = new ServerConfiguration(
-                        url,
-                        username,
-                        (password != null) ? password.getPlainText() : "",
-                        tenantId,
-                        0,
-                        false
-                );
+
+            if (!Utils.isValidLRCUrl(url)) {
+                return FormValidation.error("invalid parameter: url");
             }
+
+            if (!Utils.isValidLRCTenant(tenantId)) {
+                return FormValidation.error("invalid parameter: tenant");
+            }
+
+            boolean useOAuthFlag = Boolean.parseBoolean(useOAuth);
+            String user = useOAuthFlag ? clientId : username;
+            String pswd;
+
+            if (useOAuthFlag) {
+                pswd = (clientSecret != null) ? clientSecret.getPlainText() : "";
+            } else {
+                pswd = (password != null) ? password.getPlainText() : "";
+            }
+
+            ServerConfiguration config = new ServerConfiguration(
+                    url,
+                    user,
+                    pswd,
+                    tenantId,
+                    0,
+                    false
+            );
+
             ProxyConfiguration proxyConfiguration = (
                     ConfigurationFactory.createProxyConfiguration(
                             url,
