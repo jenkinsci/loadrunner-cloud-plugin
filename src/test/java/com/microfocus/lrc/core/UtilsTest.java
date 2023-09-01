@@ -14,7 +14,7 @@ package com.microfocus.lrc.core;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class UtilsTest {
 
@@ -28,5 +28,27 @@ public class UtilsTest {
                 Utils.maskString("abc@microfocus.com", Utils.MASK_PREFIX_LEN, Utils.MASK_SUFFIX_LEN));
         assertEquals("email address 2 + 3", "ab*************com",
                 Utils.maskString("abc@microfocus.com", 2, 3));
+    }
+
+    @Test
+    public void isValidUrl() {
+        assertFalse(Utils.isValidUrl("file:///tmp/t.html"));
+        assertTrue(Utils.isValidUrl("http://test.com"));
+        assertTrue(Utils.isValidUrl("https://test.com"));
+    }
+
+    @Test
+    public void isValidLRCUrl() {
+        assertTrue(Utils.isValidLRCUrl("https://loadrunner-cloud.saas.microfocus.com"));
+        assertTrue(Utils.isValidLRCUrl("https://loadrunner-cloud-eur.saas.microfocus.com"));
+        assertTrue(Utils.isValidLRCUrl("https://srl-qa100.saas.microfocus.com"));
+        assertFalse(Utils.isValidLRCUrl("https://toolongaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+    }
+
+    @Test
+    public void isValidLRCTenant() {
+        assertTrue(Utils.isValidLRCTenant("123456789"));
+        assertFalse(Utils.isValidLRCTenant(""));
+        assertFalse(Utils.isValidLRCTenant("123456789012345678901"));
     }
 }
