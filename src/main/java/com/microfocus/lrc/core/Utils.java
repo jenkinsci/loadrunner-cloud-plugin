@@ -35,6 +35,9 @@ public final class Utils {
     public static final int MASK_PREFIX_LEN = 4;
     public static final int MASK_SUFFIX_LEN = 4;
 
+    static final int MAX_LRC_URL_LEN = 80;
+    static final int MAX_LRC_TENANT_LEN = 20;
+
     private Utils() {
         throw new IllegalStateException("Utility class");
     }
@@ -64,11 +67,30 @@ public final class Utils {
 
     public static boolean isValidUrl(final String url) {
         try {
-            new URL(url);
-            return true;
+            String protocol = (new URL(url)).getProtocol();
+
+            return (protocol.equalsIgnoreCase("https") || protocol.equalsIgnoreCase("http"));
         } catch (MalformedURLException ex) {
             return false;
         }
+    }
+
+    public static boolean isValidLRCUrl(final String url) {
+        if (!isValidUrl(url)) {
+            return false;
+        }
+
+        // check in allowed lists?
+
+        return url.length() <= MAX_LRC_URL_LEN;
+    }
+
+    public static boolean isValidLRCTenant(final String tenant) {
+        if (isEmpty(tenant)) {
+            return false;
+        }
+
+        return tenant.length() <= MAX_LRC_TENANT_LEN;
     }
 
     public static String maskString(final String str, final int prefixLen, final int suffixLen) {
