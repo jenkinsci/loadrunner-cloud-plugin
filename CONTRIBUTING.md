@@ -22,3 +22,7 @@ Whenever you report a problem please provide information about:
 - Make sure to include issue number in commit message, and make the message speak for itself
 - Once you're done create a pull request and ask at least one of the maintainers for review
   - Remember to title your pull request properly as it is used for release notes
+
+## Code of conduct
+
+Same as Jenkins, applying to all discussions/comments: https://jenkins-ci.org/conduct/
