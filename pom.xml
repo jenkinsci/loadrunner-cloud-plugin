@@ -48,7 +48,7 @@
         <jenkins.version>2.289.3</jenkins.version>
         <java.level>8</java.level>
         <gitHubRepo>jenkinsci/loadrunner-cloud-plugin</gitHubRepo>
-        <kotlin.version>1.8.0</kotlin.version>
+        <kotlin.version>1.9.0</kotlin.version>
         <kotlin.compiler.incrementail>true</kotlin.compiler.incrementail>
         <configuration-as-code.version>1512.vb_79d418d5fc8</configuration-as-code.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -120,11 +120,6 @@
             <version>2.10.1</version>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>1.6.4</version>
-        </dependency>
-        <dependency>
             <groupId>io.pebbletemplates</groupId>
             <artifactId>pebble</artifactId>
             <version>3.2.1</version>
@@ -185,7 +180,6 @@
                         </goals>
                         <configuration>
                             <sourceDirs>
-                                <source>target/generated-sources/localizer</source>
                                 <source>src/main/java</source>
                             </sourceDirs>
                         </configuration>
@@ -198,7 +192,6 @@
                         </goals>
                         <configuration>
                             <sourceDirs>
-                                <source>target/generated-test-sources/injected</source>
                                 <source>src/test/java</source>
                             </sourceDirs>
                         </configuration>
