@@ -22,12 +22,12 @@ class TestRunResultsResponse(
     val averageThroughput: String,
     val totalThroughput: String,
     val averageHits: String,
-    val totalHits: Int,
+    val totalHits: Double,
     val totalTransactionsPassed: Int,
     val totalTransactionsFailed: Int,
     val scriptErrors: Int,
 ) {
-    constructor() : this("", "", 0, 0, "", "", "", 0, 0, 0, 0)
+    constructor() : this("", "", 0, 0, "", "", "", 0.0, 0, 0, 0)
 
     companion object {
         @JvmStatic
