@@ -138,11 +138,11 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
     private boolean validateJobParameters() {
         if (!isPositiveInteger(this.projectId)) {
-            this.loggerProxy.error("invalid parameter. projectId: " + this.projectId);
+            this.loggerProxy.error("Invalid parameter. projectId: " + this.projectId);
             return false;
         }
         if (!isPositiveInteger(this.testId)) {
-            this.loggerProxy.error("invalid parameter. testId: " + this.testId);
+            this.loggerProxy.error("Invalid parameter. testId: " + this.testId);
             return false;
         }
 
@@ -152,35 +152,35 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
     private boolean validateSystemParameters(final DescriptorImpl descriptor) {
         if (Boolean.TRUE.equals(descriptor.getUseOAuth())) {
             if (Utils.isEmpty(descriptor.getClientId())) {
-                this.loggerProxy.error("invalid parameter: clientId");
+                this.loggerProxy.error("Invalid parameter: clientId");
                 return false;
             }
 
             Secret clientSecret = descriptor.getClientSecret();
             if (clientSecret == null || Utils.isEmpty(clientSecret.getPlainText())) {
-                this.loggerProxy.error("invalid parameter: clientSecret");
+                this.loggerProxy.error("Invalid parameter: clientSecret");
                 return false;
             }
         } else {
             if (Utils.isEmpty(descriptor.getUsername())) {
-                this.loggerProxy.error("invalid parameter: username");
+                this.loggerProxy.error("Invalid parameter: username");
                 return false;
             }
 
             Secret pswd = descriptor.getPassword();
             if (pswd == null || Utils.isEmpty(pswd.getPlainText())) {
-                this.loggerProxy.error("invalid parameter: password");
+                this.loggerProxy.error("Invalid parameter: password");
                 return false;
             }
         }
 
         if (!Utils.isValidLRCTenant(descriptor.getTenantId())) {
-            this.loggerProxy.error("invalid parameter: tenant");
+            this.loggerProxy.error("Invalid parameter: tenant");
             return false;
         }
 
         if (Utils.isEmpty(descriptor.getUrl()) || !Utils.isValidLRCUrl(descriptor.getUrl())) {
-            this.loggerProxy.error("invalid parameter: url");
+            this.loggerProxy.error("Invalid parameter: url");
             return false;
         }
 
@@ -680,11 +680,11 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         @POST
         public FormValidation doCheckProjectID(@QueryParameter final String value) {
             if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a ProjectID");
+                return FormValidation.error("Please input a Project ID");
             }
 
             if (!value.matches("^\\d+$")) {
-                return FormValidation.error("Invalid ProjectID");
+                return FormValidation.error("Invalid Project ID");
             }
             return FormValidation.ok();
         }
@@ -811,11 +811,11 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
             if (!Utils.isValidLRCUrl(url)) {
-                return FormValidation.error("invalid parameter: url");
+                return FormValidation.error("Invalid parameter: URL");
             }
 
             if (!Utils.isValidLRCTenant(tenantId)) {
-                return FormValidation.error("invalid parameter: tenant");
+                return FormValidation.error("Invalid parameter: Tenant ID");
             }
 
             boolean useOAuthFlag = Boolean.parseBoolean(useOAuth);
@@ -854,7 +854,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 c.validateTenant();
                 return FormValidation.ok("Test connection succeeded!");
             } catch (Exception e) {
-                return FormValidation.error("Test connection failed, error: " + e.getMessage());
+                return FormValidation.error("Test connection failed. Error: " + e.getMessage());
             }
         }
     }

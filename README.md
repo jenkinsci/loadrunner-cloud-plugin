@@ -29,7 +29,7 @@ Both steps are also exposed in the pipeline job as `lrcRunTest` and `lrcGenTrend
   - **Username** and **Password**  
   - If you use [API Access keys](https://admhelp.microfocus.com/lrc/en/Latest/Content/Storm/Admin-APIAccess.htm), select the **Use OAuth token** checkbox, then input the **Client ID** and **Client Secret**.
   - **URL**, default: "https://loadrunner-cloud.saas.microfocus.com"
-  - **Tenant Id**, for example: 123456789
+  - **Tenant ID**, for example: 123456789
   - **Proxy** settings (optional). If you need to use a proxy to access LoadRunner Cloud, select **Connect LoadRunner Cloud via proxy** checkbox, then configure the following fields.
     - Proxy Host	    - The proxy server host name.
     - Proxy Port	    - The proxy server port number.
