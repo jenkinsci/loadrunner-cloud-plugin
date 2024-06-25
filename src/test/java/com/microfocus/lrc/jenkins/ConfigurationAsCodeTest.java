@@ -88,4 +88,40 @@ public class ConfigurationAsCodeTest {
             jsonObject.getString("proxyPassword");
         });
     }
+
+    @Test
+    @ConfiguredWithCode("configuration-as-code-new.yml")
+    public void shouldSupportCACS_new() throws Exception {
+        TestRunBuilder.DescriptorImpl descriptor = new TestRunBuilder.DescriptorImpl();
+
+        assertEquals(TENANTID, descriptor.getTenantId());
+        assertEquals(URL, descriptor.getUrl());
+
+        assertEquals(CLIENT_ID, descriptor.getClientId());
+        assertNotNull(descriptor.getClientSecret());
+
+        assertTrue(descriptor.getUseProxy());
+        assertEquals(PROXYHOST, descriptor.getProxyHost());
+        assertEquals(PROXYPORT, descriptor.getProxyPort());
+    }
+
+    @Test
+    @ConfiguredWithCode("configuration-as-code-new.yml")
+    public void shouldSupportCACSExport_new() throws Exception {
+        ConfiguratorRegistry registry = ConfiguratorRegistry.get();
+        ConfigurationContext context = new ConfigurationContext(registry);
+        CNode yourAttribute = getUnclassifiedRoot(context).get("lrcRunTest");
+
+        JSONObject jsonObject = JSONObject.fromObject(convertToJson(toYamlString(yourAttribute)));
+
+        assertEquals(URL, jsonObject.getString("url"));
+        assertEquals(TENANTID, jsonObject.getString("tenantId"));
+
+        assertEquals(CLIENT_ID, jsonObject.getString("clientId"));
+        assertNotNull(jsonObject.getString("clientSecret"));
+
+        assertTrue(jsonObject.getBoolean("useProxy"));
+        assertEquals(PROXYHOST, jsonObject.getString("proxyHost"));
+        assertEquals(PROXYPORT, jsonObject.getString("proxyPort"));
+    }
 }

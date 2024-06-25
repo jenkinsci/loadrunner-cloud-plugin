@@ -74,7 +74,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
     static Map<String, String> readStringConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
         Map<String, String> map = new HashMap<>();
-        for (StringOptionInEnvVars key : StringOptionInEnvVars.values()) {
+        for (StringOptionInEnvVars key : StringOptionInEnvVars.getEntries()) {
             String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
             if (StringUtils.isNotBlank(value)) {
                 map.put(key.name(), value.trim());
@@ -333,7 +333,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
     private Map<String, String> readBoolConfigFromEnvVars(final Run<?, ?> run, final Launcher launcher) {
         Map<String, String> map = new HashMap<>();
-        for (BooleanOptionInEnvVars key : BooleanOptionInEnvVars.values()) {
+        for (BooleanOptionInEnvVars key : BooleanOptionInEnvVars.getEntries()) {
             String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
             if (StringUtils.isNotBlank(value) && !value.equals("0")
                     && !value.equalsIgnoreCase("false") && !value.equalsIgnoreCase("no")) {
@@ -452,22 +452,21 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
         public DescriptorImpl() {
             load();
+
+            if (Boolean.FALSE.equals(this.useOAuth) && !StringUtils.isBlank(this.username)) {
+                this.clientId = this.username;
+                this.clientSecret = this.password;
+            }
+
+            this.useOAuth = true; // always use fields: 'clientId' and 'clientSecret'
         }
 
         public String getUser() {
-            if (Boolean.TRUE.equals(this.useOAuth)) {
-                return this.clientId;
-            } else {
-                return this.username;
-            }
+            return this.clientId;
         }
 
         public String getPswd() {
-            if (Boolean.TRUE.equals(this.useOAuth)) {
-                return (this.clientSecret != null) ? this.clientSecret.getPlainText() : "";
-            } else {
-                return (this.password != null) ? this.password.getPlainText() : "";
-            }
+            return (this.clientSecret != null) ? this.clientSecret.getPlainText() : "";
         }
 
         @Override
@@ -515,9 +514,8 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
             // set all properties from formData
             // validate all properties, throw FormException if invalid
-            this.username = this.getStringConfig(formData, Constants.USERNAME);
-            this.password = this.getPasswordConfig(formData, Constants.PASSWORD);
             this.url = StringUtils.stripEnd(this.getStringConfig(formData, Constants.URL), "/");
+            this.tenantId = this.getStringConfig(formData, Constants.TENANTID);
 
             this.useProxy = this.getBooleanConfig(formData, "useProxy");
             this.proxyHost = this.getStringConfig(formData, "proxyHost");
@@ -533,10 +531,12 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
             this.proxyPassword = this.getPasswordConfig(formData, "proxyPassword");
 
-            this.useOAuth = this.getBooleanConfig(formData, Constants.USE_OAUTH);
             this.clientId = this.getStringConfig(formData, Constants.CLIENT_ID);
             this.clientSecret = this.getPasswordConfig(formData, Constants.CLIENT_SECRET);
-            this.tenantId = this.getStringConfig(formData, Constants.TENANTID);
+            this.useOAuth = true;
+
+            this.username = "";
+            this.password = null;
 
             save();
             return super.configure(req, formData);
@@ -545,7 +545,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         @POST
         public FormValidation doCheckUrl(@QueryParameter final String value) {
             String errorMsg = "Please input a valid URL";
-            if (value == null || value.trim().length() == 0) {
+            if (value == null || value.trim().isEmpty()) {
                 return FormValidation.error(errorMsg);
             }
 
@@ -558,8 +558,8 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
         @POST
         public FormValidation doCheckTenantId(@QueryParameter final String value) {
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Tenant ID");
+            if (value == null || value.trim().isEmpty()) {
+                return FormValidation.error("Please input tenant id");
             }
 
             return FormValidation.ok();
@@ -568,15 +568,10 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         @SuppressWarnings("checkstyle:HiddenField")
         @POST
         public FormValidation doCheckUsername(
-                @QueryParameter final String value,
-                @QueryParameter final String useOAuth
+                @QueryParameter final String value
         ) {
-            if (Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Username");
+            if (value == null || value.trim().isEmpty()) {
+                return FormValidation.error("Please input client id or username");
             }
 
             return FormValidation.ok();
@@ -585,49 +580,10 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         @SuppressWarnings("checkstyle:HiddenField")
         @POST
         public FormValidation doCheckPassword(
-                @QueryParameter final String value,
-                final @QueryParameter String useOAuth
+                @QueryParameter final String value
         ) {
-            if (Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Password");
-            }
-
-            return FormValidation.ok();
-        }
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckClientId(
-                @QueryParameter final String value,
-                @QueryParameter final String useOAuth
-        ) {
-            if (!Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (!ApiClient.isOAuthClientId(value.trim())) {
-                return FormValidation.error("Please input a valid Client ID");
-            }
-
-            return FormValidation.ok();
-        }
-
-        @SuppressWarnings("checkstyle:HiddenField")
-        @POST
-        public FormValidation doCheckClientSecret(
-                @QueryParameter final String value,
-                @QueryParameter final String useOAuth
-        ) {
-            if (!Boolean.parseBoolean(useOAuth)) {
-                return FormValidation.ok();
-            }
-
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a valid Client Secret");
+            if (value == null || value.trim().isEmpty()) {
+                return FormValidation.error("Please input client secret or password");
             }
 
             return FormValidation.ok();
@@ -643,8 +599,8 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 return FormValidation.ok();
             }
 
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Host");
+            if (value == null || value.trim().isEmpty()) {
+                return FormValidation.error("Please input a valid proxy host");
             }
 
             return FormValidation.ok();
@@ -660,18 +616,18 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 return FormValidation.ok();
             }
 
-            if (value == null || value.trim().length() == 0) {
+            if (value == null || value.trim().isEmpty()) {
                 return FormValidation.ok();
             }
 
             if (!StringUtils.isNumeric(value)) {
-                return FormValidation.error("Please input a valid port number.");
+                return FormValidation.error("Please input a valid port number");
             }
 
             int portVal = Integer.parseInt(value);
 
             if (portVal < 0 || portVal > 65535) {
-                return FormValidation.error("Please input a valid port number.");
+                return FormValidation.error("Please input a valid port number");
             }
 
             return FormValidation.ok();
@@ -679,12 +635,12 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
         @POST
         public FormValidation doCheckProjectID(@QueryParameter final String value) {
-            if (value == null || value.trim().length() == 0) {
-                return FormValidation.error("Please input a Project ID");
+            if (value == null || value.trim().isEmpty()) {
+                return FormValidation.error("Please input project id");
             }
 
             if (!value.matches("^\\d+$")) {
-                return FormValidation.error("Invalid Project ID");
+                return FormValidation.error("Invalid project id");
             }
             return FormValidation.ok();
         }
@@ -795,8 +751,6 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         @SuppressWarnings({"java:S107", "checkstyle:ParameterNumber", "checkstyle:HiddenField"})
         @POST
         public FormValidation doTestConnection(
-                @QueryParameter("username") final String username,
-                @QueryParameter("password") final Secret password,
                 @QueryParameter("url") final String url,
                 @QueryParameter("proxyHost") final String proxyHost,
                 @QueryParameter("proxyPort") final String proxyPort,
@@ -805,7 +759,6 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 @QueryParameter("clientId") final String clientId,
                 @QueryParameter("clientSecret") final Secret clientSecret,
                 @QueryParameter("tenantId") final String tenantId,
-                @QueryParameter("useOAuth") final String useOAuth,
                 @QueryParameter("useProxy") final String useProxy
         ) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
@@ -818,15 +771,8 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 return FormValidation.error("Invalid parameter: Tenant ID");
             }
 
-            boolean useOAuthFlag = Boolean.parseBoolean(useOAuth);
-            String user = useOAuthFlag ? clientId : username;
-            String pswd;
-
-            if (useOAuthFlag) {
-                pswd = (clientSecret != null) ? clientSecret.getPlainText() : "";
-            } else {
-                pswd = (password != null) ? password.getPlainText() : "";
-            }
+            String user = clientId;
+            String pswd = (clientSecret != null) ? clientSecret.getPlainText() : "";
 
             ServerConfiguration config = new ServerConfiguration(
                     url,
