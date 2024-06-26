@@ -1,0 +1,9 @@
+unclassified:
+  lrcRunTest:
+    tenantId: "123456789"
+    url: "https://loadrunner-cloud.saas.microfocus.com"
+    clientId: "oauth2-XXXXXXXXXXXXXXXXXXXX@microfocus.com"
+    clientSecret: "{AQAAABAAAAAgfkVMlYtw5Idd/fl5a+BMRYmhXXu4BjJ88A0tyk8+tvJxa9lgj1/pNMsDwpJubGtR}"
+    useProxy: true
+    proxyHost: "172.31.128.1"
+    proxyPort: "8080"

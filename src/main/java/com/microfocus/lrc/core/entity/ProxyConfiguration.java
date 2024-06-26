@@ -33,7 +33,7 @@ public final class ProxyConfiguration implements Serializable {
     // #endregion
 
     public ProxyConfiguration(final String host, final int port, final String username, final String password) {
-        if (host == null || host.length() == 0) {
+        if (host == null || host.isEmpty()) {
             throw new IllegalArgumentException("host must not be empty.");
         }
         if (port <= 0 || port > MAX_PORT_RANGE) {
@@ -43,7 +43,7 @@ public final class ProxyConfiguration implements Serializable {
         this.host = host;
         this.port = port;
 
-        if (username != null && password != null && username.length() > 0 && password.length() > 0) {
+        if (username != null && password != null && !username.isEmpty() && !password.isEmpty()) {
             this.username = username;
             this.password = Secret.fromString(password);
         }
@@ -51,7 +51,7 @@ public final class ProxyConfiguration implements Serializable {
 
     public ProxyConfiguration(final String host, final String port, final String username, final String password)
             throws IllegalArgumentException {
-        if (host == null || host.length() == 0) {
+        if (host == null || host.isEmpty()) {
             throw new IllegalArgumentException("host must not be empty.");
         }
         int portNum;
@@ -67,7 +67,7 @@ public final class ProxyConfiguration implements Serializable {
         this.host = host;
         this.port = portNum;
 
-        if (username != null && password != null && username.length() > 0 && password.length() > 0) {
+        if (username != null && password != null && !username.isEmpty() && !password.isEmpty()) {
             this.username = username;
             this.password = Secret.fromString(password);
         }
