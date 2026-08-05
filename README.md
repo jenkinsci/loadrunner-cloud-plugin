@@ -27,8 +27,8 @@ Both steps are also exposed in the pipeline job as `lrcRunTest` and `lrcGenTrend
 ### System configuration
 - Navigate to **Manage Jenkins** &rarr; **System Configuration** &rarr; **Configure System** &rarr; **LoadRunner Cloud** and then configure the following settings: 
   - **Client ID** and **Client Secret**  
-  Refer to [API access keys](https://admhelp.microfocus.com/lrc/en/Latest/Content/Storm/Admin-APIAccess.htm) for details. You can still input **Username** and **Password** in the fields (depends on the feature toggle in your tenant). However, it's recommended to use API access keys.
-  - **URL**, default: "https://loadrunner-cloud.saas.microfocus.com"
+  Refer to [API access keys](https://admhelp.microfocus.com/lrc/en/Latest/Content/Storm/Admin-APIAccess.htm) for details. Authentication uses OAuth only; username/password login is no longer supported.
+  - **URL** - your tenant's LRx URL (not the LRC URL).
   - **Tenant ID**, for example: 123456789
   - **Proxy** settings (optional). If you need to use a proxy to access LoadRunner Cloud, select **Connect LoadRunner Cloud via proxy** checkbox, then configure the following fields.
     - Proxy Host	    - The proxy server host name.
@@ -45,7 +45,7 @@ Both steps are also exposed in the pipeline job as `lrcRunTest` and `lrcGenTrend
 unclassified:
   lrcRunTest:
     tenantId: "<TENANT ID>"
-    url: "https://loadrunner-cloud.saas.microfocus.com"
+    url: "https://platform-ams.loadrunner.saas.microfocus.com"
     clientId: "<CLIENT ID>"
     clientSecret: "<CLIENT SECRET>"
     useProxy: false

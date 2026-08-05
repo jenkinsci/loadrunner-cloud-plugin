@@ -34,6 +34,20 @@ class ApiClient internal constructor(
     private companion object {
         val MEDIA_TYPE_JSON = Constants.APPLICATION_JSON.toMediaType()
 
+        const val LRX_AUTH_TOKEN_PATH = "auth/api/public/tenant-oauth2-token"
+        const val LRX_TENANTS_PATH = "tenants/api/user/tenants"
+        const val LRC_PRODUCT_NAME = "LRC"
+
+        private val CT_TENANT_REGEX = Regex("^t_(\\d+)$")
+
+        @JvmStatic
+        fun toCtTenantId(tenantId: String?): String? {
+            if (tenantId == null) {
+                return null
+            }
+            return CT_TENANT_REGEX.find(tenantId)?.groupValues?.get(1) ?: tenantId
+        }
+
         @JvmStatic
         fun isOAuthClientId(username: String?): Boolean {
             return ((username != null)
@@ -44,7 +58,6 @@ class ApiClient internal constructor(
     }
 
     private var tokenAuth: String? = null
-    private var csrfCookieStr: String? = null
     private var okHttpClient: OkHttpClient? = null
 
     private fun prepareUrlBuilder(apiPath: String): HttpUrl.Builder {
@@ -67,11 +80,6 @@ class ApiClient internal constructor(
             .url(url)
             .addHeader("Content-Type", contentType)
             .addHeader("cache-control", "no-cache")
-
-        if (this.csrfCookieStr != null) {
-            val csrf = "LWSSO_COOKIE_KEY=${this.csrfCookieStr}"
-            reqBuilder.addHeader("Cookie", csrf)
-        }
 
         if (this.tokenAuth != null) {
             reqBuilder.addHeader("Authorization", "Bearer ${this.tokenAuth}")
@@ -136,58 +144,154 @@ class ApiClient internal constructor(
         return this.execute(reqBuilder)
     }
 
-    private fun loginOAuth() {
-        val payload = JsonObject()
-        payload.addProperty("client_id", this.serverConfiguration.username)
-        payload.addProperty("client_secret", this.serverConfiguration.password)
+    private fun loginOAuthViaLrx() {
+        // Preserve the original LRx base URL so that repeated logins (e.g. a second
+        // ApiClient created from the same, already-resolved ServerConfiguration) keep
+        // authenticating against LRx instead of the resolved LRC target URL.
+        val lrxBaseUrl = this.serverConfiguration.lrxUrl ?: this.serverConfiguration.url
+        this.serverConfiguration.lrxUrl = lrxBaseUrl
 
-        val res = this.post("v1/auth-client", payload = payload)
-        res.use {
-            if (res.code != 200) {
-                throw IOException("Failed to login ${this.serverConfiguration.url}. Status code: ${res.code}, details: ${res.body?.string()}")
+        this.tokenAuth = this.getBearerToken(lrxBaseUrl)
+
+        val lrcTargetUrl = this.getLrcTargetUrl(lrxBaseUrl)
+        if (lrcTargetUrl.isNullOrEmpty()) {
+            throw IOException(
+                "Authorization failed: no Core Performance Engineering (LRC) product is available "
+                        + "for this tenant/client."
+            )
+        }
+
+        this.serverConfiguration.url = lrcTargetUrl.trimEnd('/')
+        this.loggerProxy.info("Login OK (LRx -> LRC). Target: ${this.serverConfiguration.url}")
+    }
+
+    private fun buildLrxUrl(lrxBaseUrl: String, apiPath: String): HttpUrl {
+        val builder = this.parseURL(lrxBaseUrl)
+            .newBuilder()
+            .addPathSegments(apiPath)
+
+        val ctTenantId = toCtTenantId(this.serverConfiguration.tenantId)
+        if (!ctTenantId.isNullOrEmpty()) {
+            builder.addQueryParameter("TENANTID", ctTenantId)
+        }
+
+        return builder.build()
+    }
+
+    private fun getBearerToken(lrxBaseUrl: String): String {
+        val ctTenantId = toCtTenantId(this.serverConfiguration.tenantId)
+        val url = this.buildLrxUrl(lrxBaseUrl, LRX_AUTH_TOKEN_PATH)
+
+        val payload = JsonObject()
+        payload.addProperty("tenantId", ctTenantId)
+        payload.addProperty("clientKey", this.serverConfiguration.username)
+        payload.addProperty("clientSecret", this.serverConfiguration.password)
+
+        val reqBuilder = Request.Builder()
+            .url(url)
+            .addHeader("Content-Type", Constants.APPLICATION_JSON)
+            .addHeader("Accept", Constants.APPLICATION_JSON)
+            .addHeader("cache-control", "no-cache")
+            .post(payload.toString().toRequestBody(MEDIA_TYPE_JSON))
+
+        this.execute(reqBuilder).use { res ->
+            if (!res.isSuccessful) {
+                throw IOException(this.mapLrxLoginError(res))
             }
+
             val body = res.body?.string()
-            val resObj = Utils.parseJsonString(body, "Failed to parse authentication response data")
-            if (resObj.has("token")) {
-                this.tokenAuth = resObj["token"].asString
-            } else {
-                throw IOException("Failed to login ${this.serverConfiguration.url}. Invalid response: ${res.body?.string()}")
+            val contentType = res.header("content-type", null)
+            if ((contentType != null) && !contentType.contains("json", ignoreCase = true)) {
+                throw IOException(
+                    "The configured URL is not a valid LRx endpoint (unexpected response). "
+                            + "Make sure the server URL is the tenant's LRx URL, not the LRC URL."
+                )
             }
+
+            val resObj = Utils.parseJsonString(body, "Failed to parse authentication response data")
+            if (resObj.has("bearerToken") && !resObj["bearerToken"].isJsonNull) {
+                return resObj["bearerToken"].asString
+            }
+
+            throw IOException("Failed to login $lrxBaseUrl. LRx did not return a bearer token.")
+        }
+    }
+
+    private fun getLrcTargetUrl(lrxBaseUrl: String): String? {
+        val url = this.buildLrxUrl(lrxBaseUrl, LRX_TENANTS_PATH)
+
+        val reqBuilder = Request.Builder()
+            .url(url)
+            .addHeader("Accept", Constants.APPLICATION_JSON)
+            .addHeader("cache-control", "no-cache")
+            .addHeader("Authorization", "Bearer ${this.tokenAuth}")
+            .get()
+
+        this.execute(reqBuilder).use { res ->
+            if (!res.isSuccessful) {
+                throw IOException(this.mapLrxLoginError(res))
+            }
+
+            val resObj = Utils.parseJsonString(res.body?.string(), "Failed to parse tenants response data")
+            if (!resObj.has("products") || !resObj["products"].isJsonArray) {
+                return null
+            }
+
+            for (element in resObj["products"].asJsonArray) {
+                if (!element.isJsonObject) {
+                    continue
+                }
+                val product = element.asJsonObject
+                val productName = if (product.has("productName") && !product["productName"].isJsonNull) {
+                    product["productName"].asString
+                } else {
+                    null
+                }
+                if (LRC_PRODUCT_NAME == productName
+                    && product.has("farmUrl") && !product["farmUrl"].isJsonNull
+                ) {
+                    return product["farmUrl"].asString
+                }
+            }
+
+            return null
+        }
+    }
+
+    private fun mapLrxLoginError(res: Response): String {
+        return when (res.code) {
+            400 ->
+                "Authentication failed: Invalid client id or client secret. "
+                    .plus("Please verify your credentials and try again.")
+            401, 403 ->
+                "Connection failed: The configured server endpoint does not match your tenant. "
+                    .plus("Please verify that the URL and tenant id are correct.")
+            404 ->
+                "The configured URL is not a valid LRx endpoint. "
+                    .plus("Make sure the server URL is the tenant's LRx URL, not the LRC URL.")
+            else ->
+                "Failed to login ${this.serverConfiguration.url}. "
+                    .plus("Status code: ${res.code}, details: ${res.body?.string()}")
         }
     }
 
     fun login() {
         if (isOAuthClientId(this.serverConfiguration.username)) {
-            return this.loginOAuth()
-        }
-
-        val payload = JsonObject()
-        payload.addProperty("user", this.serverConfiguration.username)
-        payload.addProperty("password", this.serverConfiguration.password)
-
-        val res = this.post("v1/auth", payload = payload)
-        res.use {
-            if (res.code != 200) {
-                throw IOException("Failed to login ${this.serverConfiguration.url}. Status code: ${res.code}, details: ${res.body?.string()}")
-            }
-
-            val resObj = Utils.parseJsonString(res.body?.string(), "Failed to parse authentication response data")
-            if (resObj.has("token")) {
-                this.csrfCookieStr = resObj["token"].asString
-            } else {
-                throw IOException("Failed to login ${this.serverConfiguration.url}. Invalid response: ${res.body?.string()}")
-            }
+            this.loginOAuthViaLrx()
+        } else {
+            throw Exception("Invalid Credentials type. Use valid client ID and secret")
         }
     }
 
     fun validateTenant() {
         val res = this.get("v1/projects")
         res.use {
+            val body = res.body?.string()
             if (res.code != 200) {
-                throw IOException("Failed to retrieve projects from tenant: ${res.code}, ${res.body?.string()}")
+                throw IOException("Failed to retrieve projects from tenant: ${res.code}, $body")
             }
 
-            if (!Utils.isValidJsonArray(res.body?.string())) {
+            if (!Utils.isValidJsonArray(body)) {
                 throw IOException("Failed to retrieve projects from tenant")
             }
         }

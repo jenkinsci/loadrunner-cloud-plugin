@@ -12,6 +12,7 @@
 
 package com.microfocus.lrc
 
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.microfocus.lrc.jenkins.TestRunBuilderTest
 import okhttp3.mockwebserver.MockResponse
@@ -20,12 +21,29 @@ class MockServerResponseGenerator {
     companion object {
         @JvmStatic
         fun mockLogin() {
-            val responseLogin = MockResponse()
-            val loginResObj = JsonObject()
-            loginResObj.addProperty("token", "fake_token")
-            responseLogin.setBody(loginResObj.toString())
-            TestRunBuilderTest.mockserver.enqueue(responseLogin)
+            // 1. LRx bearer token exchange (POST auth/api/public/tenant-oauth2-token)
+            val responseToken = MockResponse()
+            val tokenResObj = JsonObject()
+            tokenResObj.addProperty("bearerToken", "fake_token")
+            tokenResObj.addProperty("scope", "integrations")
+            responseToken.setBody(tokenResObj.toString())
+            TestRunBuilderTest.mockserver.enqueue(responseToken)
 
+            // 2. LRx tenants lookup (GET tenants/api/user/tenants) -> LRC farmUrl.
+            // Point the resolved LRC target back at the mock server so subsequent
+            // API calls keep hitting it.
+            val responseTenants = MockResponse()
+            val tenantsResObj = JsonObject()
+            val products = JsonArray()
+            val lrcProduct = JsonObject()
+            lrcProduct.addProperty("productName", "LRC")
+            lrcProduct.addProperty("farmUrl", TestRunBuilderTest.mockserver.url("/").toString())
+            products.add(lrcProduct)
+            tenantsResObj.add("products", products)
+            responseTenants.setBody(tenantsResObj.toString())
+            TestRunBuilderTest.mockserver.enqueue(responseTenants)
+
+            // 3. validateTenant (GET v1/projects)
             val responseProjects = MockResponse()
             responseProjects.setBody("[]")
             TestRunBuilderTest.mockserver.enqueue(responseProjects)

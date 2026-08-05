@@ -361,7 +361,7 @@ public class TestRunBuilderTest {
             TestRunBuilder.DescriptorImpl descriptor = jenkins.get(TestRunBuilder.DescriptorImpl.class);
             String baseUrl = mockserver.url("/").toString();
             descriptor.setUrl(baseUrl);
-            descriptor.setClientId("FAKE_CLIENT_ID");
+            descriptor.setClientId("oauth2-1234567890abcdefghij@microfocus.com");
             descriptor.setClientSecret("FAKE_CLIENT_SECRET");
             descriptor.setTenantId("FAKE_TENANT_ID");
             descriptor.setUseOAuth(true);

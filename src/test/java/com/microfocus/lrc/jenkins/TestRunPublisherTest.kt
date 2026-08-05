@@ -92,7 +92,7 @@ class TestRunPublisherTest {
         val descriptor = jenkins.get(TestRunBuilder.DescriptorImpl::class.java)
         val baseUrl = TestRunBuilderTest.mockserver.url("/").toString()
         descriptor.url = baseUrl
-        descriptor.clientId = "FAKE_CLIENT_ID"
+        descriptor.clientId = "oauth2-1234567890abcdefghij@microfocus.com"
         descriptor.setClientSecret("FAKE_CLIENT_SECRET")
         descriptor.tenantId = "FAKE_TENANT_ID"
         descriptor.useOAuth = true

@@ -796,8 +796,8 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
             );
             config.setProxyConfiguration(proxyConfiguration);
             try (ApiClient c = ApiClientFactory.getClient(config, new LoggerProxy())) {
-                c.login();
-                c.validateTenant();
+                // getClient() already performs login() and validateTenant();
+                // reaching this point without an exception means the connection is valid.
                 return FormValidation.ok("Test connection succeeded!");
             } catch (Exception e) {
                 return FormValidation.error("Test connection failed. Error: " + e.getMessage());

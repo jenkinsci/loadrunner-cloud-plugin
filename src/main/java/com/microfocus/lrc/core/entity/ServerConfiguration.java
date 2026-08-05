@@ -21,6 +21,7 @@ public final class ServerConfiguration implements Serializable {
     private final int projectId;
     private final boolean sendEmail;
     private String url;
+    private String lrxUrl;
     private String username;
     private Secret password;
     private String tenantId;
@@ -49,6 +50,18 @@ public final class ServerConfiguration implements Serializable {
     // #region getter/setter
     public String getUrl() {
         return url;
+    }
+
+    public void setUrl(final String url) {
+        this.url = url;
+    }
+
+    public String getLrxUrl() {
+        return lrxUrl;
+    }
+
+    public void setLrxUrl(final String lrxUrl) {
+        this.lrxUrl = lrxUrl;
     }
 
     public String getUsername() {
