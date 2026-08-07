@@ -34,7 +34,6 @@ import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -50,6 +49,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.microfocus.lrc.core.Utils.*;
+import hudson.Util;
 
 public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
@@ -76,7 +76,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         Map<String, String> map = new HashMap<>();
         for (StringOptionInEnvVars key : StringOptionInEnvVars.getEntries()) {
             String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
-            if (StringUtils.isNotBlank(value)) {
+            if (Util.fixEmptyAndTrim(value) != null) {
                 map.put(key.name(), value.trim());
             }
         }
@@ -115,7 +115,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         // if not, use env vars (run parameters) to override job configurations
         if (run instanceof AbstractBuild) {
             String projectIDFromParam = EnvVarsUtil.getEnvVar(run, launcher, "LRC_PROJECT_ID");
-            if (StringUtils.isNotBlank(projectIDFromParam)) {
+            if (Util.fixEmptyAndTrim(projectIDFromParam) != null) {
                 logFieldReadFromParam("project id", projectIDFromParam, run.getId());
                 return projectIDFromParam.trim();
             }
@@ -127,7 +127,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
     private String getTestIdAtRunTime(final Run<?, ?> run, final Launcher launcher) {
         if (run instanceof AbstractBuild) {
             String testIDFromParam = EnvVarsUtil.getEnvVar(run, launcher, "LRC_TEST_ID");
-            if (StringUtils.isNotBlank(testIDFromParam)) {
+            if (Util.fixEmptyAndTrim(testIDFromParam) != null) {
                 logFieldReadFromParam("test id", testIDFromParam, run.getId());
                 return testIDFromParam.trim();
             }
@@ -335,7 +335,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         Map<String, String> map = new HashMap<>();
         for (BooleanOptionInEnvVars key : BooleanOptionInEnvVars.getEntries()) {
             String value = EnvVarsUtil.getEnvVar(run, launcher, key.name());
-            if (StringUtils.isNotBlank(value) && !value.equals("0")
+            if (Util.fixEmptyAndTrim(value) != null && !value.equals("0")
                     && !value.equalsIgnoreCase("false") && !value.equalsIgnoreCase("no")) {
                 this.loggerProxy.info("Read " + key.name() + " from parameters / env variables: " + value);
                 map.put(key.name(), "true");
@@ -453,7 +453,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         public DescriptorImpl() {
             load();
 
-            if (Boolean.FALSE.equals(this.useOAuth) && !StringUtils.isBlank(this.username)) {
+            if (Boolean.FALSE.equals(this.useOAuth) && Util.fixEmptyAndTrim(this.username) != null) {
                 this.clientId = this.username;
                 this.clientSecret = this.password;
             }
@@ -483,7 +483,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         private String getStringConfig(final JSONObject data, final String key) {
             try {
                 String val = data.getString(key);
-                if (StringUtils.isNotEmpty(val)) {
+                if (Util.fixEmpty(val) != null) {
                     return val.trim();
                 }
 
@@ -495,7 +495,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
 
         private Secret getPasswordConfig(final JSONObject data, final String key) {
             String val = this.getStringConfig(data, key);
-            if (StringUtils.isBlank(val)) {
+            if (Util.fixEmptyAndTrim(val) == null) {
                 return null;
             } else {
                 return Secret.fromString(val);
@@ -514,7 +514,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
         public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
             // set all properties from formData
             // validate all properties, throw FormException if invalid
-            this.url = StringUtils.stripEnd(this.getStringConfig(formData, Constants.URL), "/");
+            this.url = this.getStringConfig(formData, Constants.URL).replaceAll("/+$", "");
             this.tenantId = this.getStringConfig(formData, Constants.TENANTID);
 
             this.useProxy = this.getBooleanConfig(formData, "useProxy");
@@ -620,7 +620,7 @@ public final class TestRunBuilder extends Builder implements SimpleBuildStep {
                 return FormValidation.ok();
             }
 
-            if (!StringUtils.isNumeric(value)) {
+            if (value.isEmpty() || !value.chars().allMatch(Character::isDigit)) {
                 return FormValidation.error("Please input a valid port number");
             }
 

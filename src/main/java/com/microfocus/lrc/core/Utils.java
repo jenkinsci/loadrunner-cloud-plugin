@@ -16,7 +16,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.microfocus.lrc.jenkins.LoggerProxy;
 import net.sf.json.JSONArray;
-import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 
 import javax.xml.XMLConstants;
@@ -30,6 +29,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import hudson.Util;
 
 public final class Utils {
     public static final int MASK_PREFIX_LEN = 4;
@@ -54,7 +54,7 @@ public final class Utils {
     }
 
     public static boolean isEmpty(final String str) {
-        return StringUtils.isEmpty(str) || StringUtils.isBlank(str);
+        return Util.fixEmpty(str) == null || Util.fixEmptyAndTrim(str) == null;
     }
 
     public static JsonObject parseJsonString(final String str, final String errMsg) throws IOException {
