@@ -35,7 +35,6 @@ import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildStep;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -44,6 +43,7 @@ import org.kohsuke.stapler.verb.POST;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
+import hudson.Util;
 
 public final class TestRunPublisher extends Recorder implements SimpleBuildStep {
 
@@ -477,7 +477,7 @@ public final class TestRunPublisher extends Recorder implements SimpleBuildStep 
 
         @POST
         public FormValidation doCheckBenchmark(final @QueryParameter String value) {
-            if (StringUtils.isBlank(value) || StringUtils.isEmpty(value)) {
+            if (Util.fixEmptyAndTrim(value) == null || Util.fixEmpty(value) == null) {
                 return FormValidation.ok();
             }
             Integer val = getIntegerSafely(value);
